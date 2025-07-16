@@ -1,0 +1,44 @@
+# === Python ===
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtualenv
+.venv/
+env/
+venv/
+
+# Flask dotenv
+.env
+.env.*
+
+# SQLite
+*.db
+*.sqlite3
+
+# Pytest
+.pytest_cache/
+
+# === Node.js / Angular ===
+node_modules/
+dist/
+tmp/
+.angular/
+.angular/cache/
+.angular/local/
+*.tsbuildinfo
+*.log
+coverage/
+
+# === VSCode / Editor / 系統 ===
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# === Optional: OS / Editor backup files ===
+*.bak
+*.tmp
+*~
+
+shift_schedualing/
