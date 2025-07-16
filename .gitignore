@@ -11,6 +11,7 @@ venv/
 # Flask dotenv
 .env
 .env.*
+.env.*
 
 # SQLite
 *.db
@@ -19,6 +20,20 @@ venv/
 # Pytest
 .pytest_cache/
 
+# === Node.js / Angular ===
+node_modules/
+dist/
+tmp/
+.angular/
+.angular/cache/
+.angular/local/
+*.tsbuildinfo
+*.log
+coverage/
+
+# === VSCode / Editor / 系統 ===
+.vscode/
+*.swp
 # === Node.js / Angular ===
 node_modules/
 dist/
@@ -43,3 +58,11 @@ Thumbs.db
 
 shift_schedualing/
 
+Thumbs.db
+
+# === Optional: OS / Editor backup files ===
+*.bak
+*.tmp
+*~
+
+shift_schedualing/
