@@ -1,0 +1,26 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtualenv
+.venv/
+env/
+venv/
+
+# Flask dotenv
+.env
+
+# SQLite
+*.db
+*.sqlite3
+
+# VSCode / Editor
+.vscode/
+*.swp
+
+# Pytest
+.pytest_cache/
+
+# macOS
+.DS_Store
