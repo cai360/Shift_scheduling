@@ -1,0 +1,11 @@
+.login-form-outer-container{
+    max-width: 25rem;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    .login-header{
+        font-size: 1.25rem;
+        text-align: center;
+    }
+}

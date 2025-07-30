@@ -1,0 +1,33 @@
+
+<div class="login-form-outer-container">
+    <div class="login-header">
+        <h1>Login</h1>
+        <p>Hey, Enter your details to get sign in to your account</p>
+    </div>
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+
+        <div class="form-field">
+        <label for="userName">Username</label>
+        <input id="userName" formControlName="userName" type="text" />
+        </div>
+
+        <div class="form-field">
+        <label for="password">Password</label>
+        <input id="password" formControlName="password" type="password" />
+        </div>
+
+        <p>Having trouble to sign in?</p>
+        <button type="submit">Sign in</button>
+    </form>
+
+    <div class="sing-in-with">
+        <p> - or sign in with -</p>
+        <div class="sign-in-btn-group">
+            <button type="button">Google</button>
+            <button type="button">AppleID</button>
+            <button type="button">facebook</button>
+        </div>
+    </div>
+    <p>Don't have an account? <a><strong>Register Now</strong></a></p>
+
+</div>
