@@ -1,0 +1,35 @@
+
+<div class="outer-container">
+    <div class="login-inner-container">
+        <div class="login-header">
+            <h2>Login</h2>
+            <p>Hey, Enter your details to get sign in to your account</p>
+        </div>
+        <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form-container">
+
+            <div class="form-field">
+                <input id="username" formControlName="username" type="text" placeholder="Enter Email / Phone No"/>
+            </div>
+
+            <div class="form-field">
+                <input id="password" formControlName="password" type="password" placeholder="Enter Password"/>
+            </div>
+        </form>
+
+            <p class="having-troble-mess">Having trouble to sign in?</p>
+            <button class="sign-in-btn" type="submit">Sign in</button>
+
+
+        <div class="sign-in-with">
+            <p> - or sign in with - </p>
+            <div class="sign-in-btn-group">
+                <button type="button"><i class="fa-brands fa-google"></i>Google</button>
+                <button type="button"><i class="fa-brands fa-apple"></i>AppleID</button>
+                <button type="button"><i class="fa-brands fa-facebook"></i>facebook</button>
+            </div>
+        </div>
+        <p>Don't have an account? <a><strong>Register Now</strong></a></p>
+
+    </div>
+
+</div>
