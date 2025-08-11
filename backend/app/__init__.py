@@ -1,18 +1,24 @@
 from flask import Flask
 from .config import Config
-from flask_migrate import Migrate
-from .models import db  
+from .extensions import db, migrate
+from .models import db 
+from flask_cors import CORS 
 
-migrate = Migrate()  
 
-def create_app():
+
+def create_app(config_object=None):
     app = Flask(__name__)
-    app.config.from_object(Config)
+    CORS(app) 
+
+    if config_object:
+        app.config.from_object(config_object)
+    else: 
+        app.config.from_object(Config)
 
     db.init_app(app) 
     migrate.init_app(app, db)  
 
-    from .routes.user_routes import user_bp
+    from .api.user_routes import user_bp
     app.register_blueprint(user_bp, url_prefix='/api/users')
 
 
