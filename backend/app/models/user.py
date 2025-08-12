@@ -18,8 +18,9 @@ class User(db.Model):
     roles = db.relationship("Role", secondary=user_roles, backref="users")
     shift_assignments = db.relationship('ShiftAssignment', back_populates='user', passive_deletes=True)
     availabilities = db.relationship('Availability', back_populates='user', passive_deletes=True)
-    requested_swaps = db.relationship('Swap', foreign_keys='Swap.requester_id', backref='requester_user')
-    responded_swaps = db.relationship('Swap', foreign_keys='Swap.responder_id', backref='responder_user')
+    requested_swaps = db.relationship('Swap', foreign_keys='Swap.requester_id', backref='requester_user', back_populates='requester', overlaps="requester_user, responder_user")
+    responded_swaps = db.relationship('Swap', foreign_keys='Swap.responder_id', backref='responder_user', back_populates='responder', overlaps="requester_user, responder_user")
+
 
 
 
