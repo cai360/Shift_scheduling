@@ -8,5 +8,7 @@ with app.app_context():
     db.create_all()
 
 if __name__ == '__main__':
-   app.run(port=5050, debug=True)
+    import os
 
+    port = int(os.getenv("FLASK_RUN_PORT", "5050"))
+    app.run(host="127.0.0.1", port=port, debug=True)

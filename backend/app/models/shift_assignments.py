@@ -15,4 +15,7 @@ class ShiftAssignment(db.Model):
     )
 
     user  = db.relationship('User', back_populates='shift_assignments', passive_deletes=True)
+
     shift = db.relationship('Shift', back_populates='assignments')
+
+    swaps = db.relationship('Swap', back_populates='shift_assignment')

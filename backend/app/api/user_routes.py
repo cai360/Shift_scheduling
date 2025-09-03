@@ -3,48 +3,47 @@ from sqlalchemy.exc import IntegrityError
 from app.extensions import db
 from app import models
 from app.schemas.user_schema import UserCreateSchema, UserOutSchema, UserUpdateSchema
+from app.services.user_service import UserService
 
-user_bp = Blueprint("users", __name__, url_prefix="/users")
+bp = Blueprint("users", __name__, url_prefix="/users")
 
-
-@user_bp.route('/ping')
+@bp.get('/ping')
 def ping():
     return jsonify({'message': 'ping'})
 
-@user_bp.post("")
+@bp.post("")
 def create_user():
     payload = request.get_json() or {}
     data = UserCreateSchema().load(payload)
-
-    u = models.User(**data)
-    db.session.add(u)
     try:
-        db.session.commit()
-    except IntegrityError:
-        db.session.rollback()
-        return jsonify({"error": "message"}), 400
-    
-    return jsonify(UserOutSchema().dump(u)), 201
+       user = UserService.create_user(data)
+       return jsonify(UserOutSchema().dump(user)), 201
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
 
-@user_bp.get("/<user_id>")
-def get_user(user_id):
+@bp.get("/<user_id>")
+def get_user(user_id: int):
     user = models.User.query.get_or_404(user_id)
     return jsonify(UserOutSchema().dump(user))
 
-@user_bp.patch("/<user_id>")
-def update_user(user_id):
-    user = models.User.query.get_or_404(user_id)
+@bp.patch("/<user_id>")
+def update_user(user_id: int):
     payload = request.get_json() or {}
     data = UserUpdateSchema().load(payload)
 
-    for key, value in data.items(): 
-        setattr(user, key, value)
-    db.session.commit()
-    return jsonify(UserOutSchema().dump(user))
+    try:
+        user = UserService.update_user(user_id, data)
+    except ValueError as e:
+        return jsonify({"error": str(e)}, 400)
+    return jsonify(UserOutSchema().dump(user)), 200
+
+@bp.delete("/<user_id>")
+def delete_user(user_id):
+    user = UserService.delete_user(user_id)
+    return jsonify(UserOutSchema().dump(user)), 200
 
 
-
-@user_bp.get("")
+@bp.get("")
 def get_all_users():
     usres = models.User.query.order_by(models.User.id.desc()).all()
     return jsonify({"data": UserOutSchema(many=True).dump(usres)}), 200

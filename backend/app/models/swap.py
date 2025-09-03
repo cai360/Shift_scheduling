@@ -12,6 +12,21 @@ class Swap(db.Model):
     updated_at = db.Column(db.DateTime, onupdate=db.func.current_timestamp())
     
     # Relationships
-    assignment = db.relationship('ShiftAssignment', backref='swaps')
-    requester = db.relationship('User', foreign_keys=[requester_id])
-    responder = db.relationship('User', foreign_keys=[responder_id])
+    shift_assignment = db.relationship(
+        'ShiftAssignment', 
+        back_populates='swaps'
+    )
+
+    requester = db.relationship(
+        'User', 
+        foreign_keys=[requester_id],
+        back_populates='requested_swaps',
+        overlaps="responder,responded_swaps"
+    )
+    
+    responder = db.relationship(
+        'User', 
+        foreign_keys=[responder_id],
+        back_populates='responded_swaps',
+        overlaps="requester,requested_swaps"
+    )

@@ -1,8 +1,7 @@
 from flask import Flask
 from .config import Config
 from .extensions import db, migrate
-from .models import db 
-from flask_cors import CORS 
+from flask_cors import CORS
 from .api import api_bp
 
 
@@ -16,13 +15,16 @@ def create_app(config_object=None):
     else: 
         app.config.from_object(Config)
 
-    db.init_app(app) 
-    migrate.init_app(app, db)  
+    # Bind SQLAlchemy to this Flask app
+    db.init_app(app)
 
-    from .api.user_routes import user_bp
+    # Initialize Alembic (Flask-Migrate)
+    migrate.init_app(app, db)
+
+    # Ensure models are imported so migrations can detect them
+    from . import models
+
+    # Register only the parent API blueprint
     app.register_blueprint(api_bp)
-
-
     return app
-
 
