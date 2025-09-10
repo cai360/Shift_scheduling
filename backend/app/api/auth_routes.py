@@ -4,9 +4,9 @@ from app.schemas.user_schema import UserOutSchema
 from app.services.user_service import UserService
 from app.services.auth_service import AuthService
 
-auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
+bp = Blueprint("auth", __name__, url_prefix="/auth")
 
-@auth_bp.post("/login")
+@bp.post("/login")
 def login():
     payload = request.get_json() or {}
     data = LoginEmailSchema().load(payload)

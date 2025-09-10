@@ -5,11 +5,13 @@ from app.config_test import TestConfig
 from flask_migrate import upgrade
 
 @pytest.fixture()
-def test_app():
+def app():
     app = create_app(TestConfig)
-
     with app.app_context():
         upgrade()
         yield app
-
         db.session.remove()
+
+@pytest.fixture()
+def client(app):
+    return app.test_client()
