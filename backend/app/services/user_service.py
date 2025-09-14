@@ -34,8 +34,10 @@ class UserService:
     
 
     @staticmethod
-    def update_user(data: dict, id: int) -> models.User:
-        user = models.User.query.get_or_404(id)    
+    def update_user(id: int, data: dict) -> models.User:
+        user = db.session.get(models.User, id)
+        if not user:
+            raise ValueError("User not found")
         if "password" in data and data["password"]:
             field = UserService._pwd_field()
             setattr(user, field, AuthService.hash_password(data.pop("password")))   
@@ -53,7 +55,9 @@ class UserService:
     
     @staticmethod
     def delete_user(id:int) -> models.User:
-        user = models.User.query.get_or_404(id)
+        user = db.session.get(models.User, id)
+        if not user:
+            raise ValueError("User not found")
         user.active = False
         db.session.commit()
         return user

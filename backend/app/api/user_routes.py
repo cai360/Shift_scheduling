@@ -2,6 +2,7 @@ from flask import Blueprint, jsonify, request
 from marshmallow import ValidationError
 
 from app import models
+from app.extensions import db
 from app.schemas.user_schema import UserCreateSchema, UserOutSchema, UserUpdateSchema
 from app.services.user_service import UserService
 
@@ -27,22 +28,23 @@ def create_user():
 
 @bp.get("/<int:user_id>")
 def get_user(user_id: int):
-    user = models.User.query.get_or_404(user_id)
+    user = db.session.get(models.User, user_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
     return jsonify(UserOutSchema().dump(user)), 200
 
 @bp.patch("/<int:user_id>")
 def update_user(user_id: int):
     payload = request.get_json(silent=True) or {}
 
-    # 1) validate input for PATCH (partial update)
     try:
         data = UserUpdateSchema(partial=True).load(payload)
     except ValidationError as ve:
         return jsonify({"error": ve.messages}), 400
 
-    # 2) perform update
+
     try:
-        user = UserService.update_user(user_id, data)  # (id, data)
+        user = UserService.update_user(user_id, data, ) 
         return jsonify(UserOutSchema().dump(user)), 200
     except ValueError as e:
         return jsonify({"error": str(e)}), 400

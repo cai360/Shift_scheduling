@@ -32,3 +32,32 @@ def test_get_user_200(client):
     got = resp.get_json()
     assert got["id"] == uid
     assert got["email"] == payload["email"]
+
+
+def test_patch_user_email(client):
+    created =client.post("api/users", json = {"email": unique_email(), "username": "username1", "password": "PassWord001"}).get_json()
+    uid = created["id"]
+    new_email = unique_email()
+
+    resp = client.patch(f"/api/users/{uid}", json={"email": new_email})
+    assert resp.status_code == 200
+    updated = resp.get_json()
+    assert updated["email"] == new_email
+
+
+def test_delete_user_200_soft_delete(client):
+    created = client.post("api/users", json={
+        "email": unique_email(), "username": "deleteME", "password": "PassWord001"}).get_json()
+    uid = created["id"]
+
+    resp = client.delete(f"/api/users/{uid}")
+    assert resp.status_code == 200
+    body = resp.get_json()
+    assert body["active"] in (False, 0, None)
+    
+def test_create_user_validation_error_400(client):
+    ...
+
+def test_create_user_duplicate_email_400(client):
+    ...
+    
