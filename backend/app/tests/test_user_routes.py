@@ -55,9 +55,14 @@ def test_delete_user_200_soft_delete(client):
     body = resp.get_json()
     assert body["active"] in (False, 0, None)
     
-def test_create_user_validation_error_400(client):
-    ...
 
 def test_create_user_duplicate_email_400(client):
-    ...
+    email = unique_email()
+    r1 = client.post("/api/users", json={"email": email, "username": "dup1", "password": "Password123"})
+    assert r1.status_code in (200, 201)
+
+    r2 = client.post("/api/users", json={"email": email, "username": "dup2", "password": "Password123"})
+    assert r2.status_code == 400
     
+    err = r2.get_json()
+    assert "error" in err
