@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, g
 from app.utils.auth_decorators import jwt_required
 from marshmallow import ValidationError
 
@@ -13,6 +13,11 @@ bp = Blueprint("users", __name__, url_prefix="/users")
 @bp.get("/ping")
 def ping():
     return jsonify({"message": "ping"})
+
+@bp.get("/me")
+@jwt_required
+def get_me():
+    return jsonify({"user_id": g.user_id})
 
 @bp.post("")
 def create_user():

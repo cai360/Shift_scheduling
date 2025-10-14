@@ -4,5 +4,8 @@ from dotenv import load_dotenv
 load_dotenv()  
 class TestConfig:
     TESTING = True
-    SQLALCHEMY_DATABASE_URI = os.getenv("TEST_DATABASE_URL")
+    # Use the same database as production but with transaction rollback for isolation
+    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    # Disable CSRF for testing
+    WTF_CSRF_ENABLED = False

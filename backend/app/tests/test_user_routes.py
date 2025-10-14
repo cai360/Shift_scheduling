@@ -22,35 +22,35 @@ def test_create_user_201(client):
     assert "password" not in data
     assert "password_hash" not in data
 
-def test_get_user_200(client):
+def test_get_user_200(auth_client):
     payload = {"email": unique_email(), "username": "testName", "password": "Password001"}
-    created = client.post("/api/users", json=payload).get_json()
+    created = auth_client.post("/api/users", json=payload).get_json()
     uid = created["id"]
 
-    resp = client.get(f"/api/users/{uid}")
+    resp = auth_client.get(f"/api/users/{uid}")
     assert resp.status_code == 200
     got = resp.get_json()
     assert got["id"] == uid
     assert got["email"] == payload["email"]
 
 
-def test_patch_user_email(client):
-    created =client.post("api/users", json = {"email": unique_email(), "username": "username1", "password": "PassWord001"}).get_json()
+def test_patch_user_email(auth_client):
+    created = auth_client.post("/api/users", json = {"email": unique_email(), "username": "username1", "password": "PassWord001"}).get_json()
     uid = created["id"]
     new_email = unique_email()
 
-    resp = client.patch(f"/api/users/{uid}", json={"email": new_email})
+    resp = auth_client.patch(f"/api/users/{uid}", json={"email": new_email})
     assert resp.status_code == 200
     updated = resp.get_json()
     assert updated["email"] == new_email
 
 
-def test_delete_user_200_soft_delete(client):
-    created = client.post("api/users", json={
+def test_delete_user_200_soft_delete(auth_client):
+    created = auth_client.post("/api/users", json={
         "email": unique_email(), "username": "deleteME", "password": "PassWord001"}).get_json()
     uid = created["id"]
 
-    resp = client.delete(f"/api/users/{uid}")
+    resp = auth_client.delete(f"/api/users/{uid}")
     assert resp.status_code == 200
     body = resp.get_json()
     assert body["active"] in (False, 0, None)

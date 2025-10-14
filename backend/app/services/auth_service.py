@@ -57,38 +57,37 @@ class AuthService:
             "refresh_token": jwt.encode(r, secret, algorithm="HS256"),
         }
     
+    @staticmethod
+    def decode_token(token: str, expected_type: str) -> dict:
+        secret = AuthService._cfg("JWT_SECRET")
+        if not secret:
+            raise RuntimeError("JWT_SECRET not configured")
+        try: 
+            payload = jwt.decode(token, secret, algorithms=["HS256"])
+            if payload.get("type") != expected_type:
+                raise ValueError("Invalid token type")
+            return payload
+        except jwt.ExpiredSignatureError:
+            raise ValueError("Token expired")
+        except jwt.InvalidTokenError:
+            raise ValueError("Token invalid")
 
-@staticmethod
-def decode_token(token: str, expected_type: str) -> dict:
-    secret = AuthService._cfg("JWT_SECRET")
-    if not secret:
-        raise RuntimeError("JWT_SECRET not configured")
-    try: 
-        payload = jwt.decode(token, secret, algorithms=["HS256"])
-        if payload.get("type") != expected_type:
-            raise ValueError("Invalid token type")
-        return payload
-    except jwt.ExpiredSignatureError:
-        raise ValueError("Token expired")
-    except jwt.InvalidTokenError:
-        raise ValueError("Token invalid")
+    @staticmethod
+    def issue_access_from_refresh(refresh_token: str) -> dict:
+        payload = AuthService.decode_token(refresh_token, "refresh")
+        user_id = int(payload["sub"])
+        secret = AuthService._cfg("JWT_SECRET")
 
-@staticmethod
-def issue_access_from_refresh(refresh_token: str) -> dict:
-    payload = AuthService.decode_token(refresh_token, "refresh")
-    user_id = int(payload["sub"])
-    secret = AuthService._cfg("JWT_SECRET")
+        now = datetime.now(timezone.utc)
+        access_minutes = int(AuthService._cfg("JWT_ACCESS_EXPIRES_MINUTES", 15))
+        a = {
+            "sub" : str(user_id),
+            "type": "access",
+            "iat" : int(now.timestamp()),
+            "exp" : int((now + timedelta(minutes=access_minutes)).timestamp())
+        }
 
-    now = datetime.now(timezone.utc)
-    access_minutes = int(AuthService._cfg("JWT_ACCESS_EXPIRES_MINUTES", 15))
-    a = {
-        "sub" : str(user_id),
-        "type": "access",
-        "iat" : int(now.timestamp()),
-        "exp" : int((now + timedelta(minutes=access_minutes)).timestamp())
-    }
-
-    return {"access_token": jwt.encode(a, secret, algorithm="HS256")}
+        return {"access_token": jwt.encode(a, secret, algorithm="HS256")}
 
 
 
