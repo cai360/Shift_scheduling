@@ -3,6 +3,9 @@ from .config import Config
 from .extensions import db, migrate
 from flask_cors import CORS
 from .api import api_bp
+from app.utils.error_handlers import register_error_handlers
+from app.api.user_routes import db as user_bp
+
 
 
 
@@ -26,5 +29,7 @@ def create_app(config_object=None):
 
     # Register only the parent API blueprint
     app.register_blueprint(api_bp)
+
+    register_error_handlers(app)
     return app
 
