@@ -6,7 +6,7 @@ import { Injectable } from '@angular/core';
 export class Auth {
   private loggedIn : boolean = false;
 
-  login(){
+  login(email: string, password: string){
     this.loggedIn = true;
   }
 

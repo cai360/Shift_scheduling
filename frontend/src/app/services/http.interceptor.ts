@@ -41,6 +41,7 @@ export const authInterceptor: HttpInterceptorFn = (request: HttpRequest<any>, ne
                 modal.error('You do not have permission to perform this action.');
             }
             return throwError(() => error);
+            //planing to add getting refresh token here
         }),
         finalize(() => {
             if (!skipLoading) modal.stopLoading();
