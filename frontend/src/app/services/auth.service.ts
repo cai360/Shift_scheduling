@@ -15,7 +15,7 @@ interface LoginResponse {
 })
 
 
-export class Auth {
+export class AuthService {
   private http = inject(HttpService);
   private router = inject(Router);
 
@@ -54,10 +54,29 @@ export class Auth {
   getRefreshToken(): string | null {
     return localStorage.getItem(this.REFRESH_TOKEN_KEY);
   }
+
+  saveTokens(access: string, refresh: string) {
+    localStorage.setItem(this.ACCESS_TOKEN_KEY, access);
+    if (refresh) {
+      localStorage.setItem(this.REFRESH_TOKEN_KEY, refresh);
+    }
+  }
   
   isAuthenticated(): boolean {
     const token = this.getAccessToken();
     return !!token;
+  }
+
+  refreshAccessToken() {
+    const refreshToken = this.getRefreshToken();
+    if(!refreshToken){ throw new Error('No refresh token'); }
+    return this.http.doPost<LoginResponse>('auth/refresh', {refresh_Token: refreshToken}).pipe(
+      tap(res => {
+        if(res?.access_token){
+          localStorage.setItem(this.ACCESS_TOKEN_KEY, res.access_token);
+        }
+      })
+    );
   }
   
 }
