@@ -1,10 +1,14 @@
+from dotenv import load_dotenv
+import os
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
+
 from flask import Flask
-from .config import Config
-from .extensions import db, migrate
 from flask_cors import CORS
+from .extensions import db, migrate
 from .api import api_bp
+from .config import Config
 from app.utils.error_handlers import register_error_handlers
-from app.api.user_routes import db as user_bp
+
 
 
 

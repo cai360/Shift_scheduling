@@ -5,8 +5,6 @@ from flask import current_app
 
 from alembic import context
 
-from app import models 
-
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
@@ -18,8 +16,10 @@ logger = logging.getLogger('alembic.env')
 
 
 def get_engine():
-    # Use db.engine for Flask-SQLAlchemy>=3 (recommended)
-    return current_app.extensions['migrate'].db.engine
+    try:
+        return current_app.extensions['migrate'].db.engine
+    except Exception:
+        return current_app.extensions['migrate'].db.engine
 
 
 def get_engine_url():
@@ -41,7 +41,6 @@ target_db = current_app.extensions['migrate'].db
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
-
 
 
 def get_metadata():
