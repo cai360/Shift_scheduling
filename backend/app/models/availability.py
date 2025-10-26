@@ -1,38 +1,37 @@
 from app.extensions import db
 
 class Availability(db.Model):
-    """
-    Represents an employee's available working time for a specific date.
-    Each availability record belongs to both a company and a user.
-    """
     __tablename__ = 'availabilities'
 
     id = db.Column(db.Integer, primary_key=True)
+    company_id = db.Column(
+        db.Integer,
+        db.ForeignKey('companies.id', ondelete='CASCADE'),
+        nullable=False
+    )
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey('users.id', ondelete='CASCADE'),
+        nullable=False
+    )
 
-
-    company_id = db.Column(db.Integer, db.ForeignKey('companies.id', ondelete='CASCADE'), nullable=False)
-
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
-
-    # The specific date of the availability
     date = db.Column(db.Date, nullable=False)
-
-    # Start and end times of the available period
     starting_time = db.Column(db.Time, nullable=False)
     ending_time = db.Column(db.Time, nullable=False)
 
-    user = db.relationship('User', back_populates='availabilities')
-    company = db.relationship('Company', back_populates='availabilities')
+    created_at = db.Column(db.DateTime, server_default=db.func.now(), nullable=False)
+    updated_at = db.Column(db.DateTime, onupdate=db.func.now(), server_default=db.func.now(), nullable=False)
 
-    # ensures a user cannot have overlapping identical records
+    # Relationships
+    user = db.relationship('User', back_populates='availabilities', lazy='selectin')
+    company = db.relationship('Company', back_populates='availabilities', lazy='selectin')
+
     __table_args__ = (
-        db.Index(
-            'ix_company_user_availability_unique',
-            'company_id',
-            'user_id',
-            'date',
-            'starting_time',
-            'ending_time',
-            unique=True
+        db.UniqueConstraint(
+            'company_id', 'user_id', 'date', 'starting_time', 'ending_time',
+            name='uq_company_user_availability'
         ),
     )
+
+    def __repr__(self):
+        return f"<Availability id={self.id} user_id={self.user_id} date={self.date}>"

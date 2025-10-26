@@ -6,3 +6,4 @@ from .swap import Swap
 from .availability import Availability
 from .companies import Company
 from .companies_users import CompanyUser
+from .schedule import Schedule

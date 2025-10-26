@@ -1,45 +1,41 @@
 from app.extensions import db
 
+
 class ShiftAssignment(db.Model):
-    """
-    Represents an assignment of a user (employee) to a specific shift.
-    Each record connects one user to one shift and can be used for swap requests.
-    """
     __tablename__ = 'shift_assignments'
 
     id = db.Column(db.Integer, primary_key=True)
 
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'))
+    shift_id = db.Column(db.Integer, db.ForeignKey('shifts.id', ondelete='CASCADE'))
+    updated_by = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'))
 
-    user_id = db.Column(
-        db.Integer,
-        db.ForeignKey('users.id', ondelete='SET NULL'),
-        nullable=True
-    )
+    created_at = db.Column(db.DateTime, server_default=db.func.now(), nullable=False)
+    updated_at = db.Column(db.DateTime, onupdate=db.func.now(), server_default=db.func.now(), nullable=False)
 
-    shift_id = db.Column(
-        db.Integer,
-        db.ForeignKey('shifts.id', ondelete='CASCADE'),
-        nullable=False
-    )
-
+    # --- Relationships ---
     user = db.relationship(
         'User',
+        foreign_keys=[user_id],
         back_populates='shift_assignments',
-        passive_deletes=True
+        lazy='selectin',
+        overlaps="updated_by_user"
     )
 
-    shift = db.relationship(
-        'Shift',
-        back_populates='assignments'
+    updated_by_user = db.relationship(
+        'User',
+        foreign_keys=[updated_by],
+        lazy='selectin',
+        overlaps="user,shift_assignments"
     )
 
-    swaps = db.relationship(
-        'Swap',
-        back_populates='shift_assignment',
-        cascade='all, delete-orphan'
-    )
+    shift = db.relationship('Shift', back_populates='assignments', lazy='selectin')
 
-    # Prevent duplicate assignments for the same user and shift
+    swaps = db.relationship('Swap', back_populates='shift_assignment', cascade='all, delete-orphan', lazy='selectin')
+
     __table_args__ = (
         db.UniqueConstraint('shift_id', 'user_id', name='uq_shift_user_unique'),
     )
+
+    def __repr__(self):
+        return f"<ShiftAssignment id={self.id} user_id={self.user_id} shift_id={self.shift_id}>"

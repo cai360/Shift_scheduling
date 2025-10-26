@@ -1,8 +1,8 @@
-"""Initial schema
+"""initial schema
 
-Revision ID: 6c591b3e704f
+Revision ID: 6c150c1b22f4
 Revises: 
-Create Date: 2025-10-25 18:41:45.541150
+Create Date: 2025-10-26 16:30:43.573077
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '6c591b3e704f'
+revision = '6c150c1b22f4'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -22,22 +22,26 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(length=100), nullable=False),
     sa.Column('description', sa.Text(), nullable=True),
-    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.Column('is_active', sa.Boolean(), nullable=True),
+    sa.Column('require_swap_approval', sa.Boolean(), server_default=sa.text('true'), nullable=False),
+    sa.Column('is_active', sa.Boolean(), server_default=sa.text('true'), nullable=False),
     sa.Column('deleted_at', sa.DateTime(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('name')
     )
     op.create_table('users',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('username', sa.String(length=64), nullable=False),
-    sa.Column('email', sa.String(length=120), nullable=True),
-    sa.Column('hash', sa.String(), nullable=True),
-    sa.Column('active', sa.Boolean(), nullable=False),
+    sa.Column('email', sa.String(length=120), nullable=False),
+    sa.Column('hash', sa.String(), nullable=False),
+    sa.Column('active', sa.Boolean(), server_default=sa.text('true'), nullable=False),
     sa.Column('deleted_at', sa.DateTime(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('email')
+    sa.UniqueConstraint('email'),
+    sa.UniqueConstraint('username')
     )
     op.create_table('availabilities',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -46,13 +50,13 @@ def upgrade():
     sa.Column('date', sa.Date(), nullable=False),
     sa.Column('starting_time', sa.Time(), nullable=False),
     sa.Column('ending_time', sa.Time(), nullable=False),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.ForeignKeyConstraint(['company_id'], ['companies.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('company_id', 'user_id', 'date', 'starting_time', 'ending_time', name='uq_company_user_availability')
     )
-    with op.batch_alter_table('availabilities', schema=None) as batch_op:
-        batch_op.create_index('ix_company_user_availability_unique', ['company_id', 'user_id', 'date', 'starting_time', 'ending_time'], unique=True)
-
     op.create_table('company_users',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
@@ -66,16 +70,33 @@ def upgrade():
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('company_id', 'user_id', name='uq_company_user_unique')
     )
+    op.create_table('schedules',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('company_id', sa.Integer(), nullable=False),
+    sa.Column('start_date', sa.Date(), nullable=False),
+    sa.Column('end_date', sa.Date(), nullable=False),
+    sa.Column('published', sa.Boolean(), server_default=sa.text('false'), nullable=False),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.ForeignKeyConstraint(['company_id'], ['companies.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id')
+    )
     op.create_table('shifts',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('company_id', sa.Integer(), nullable=False),
+    sa.Column('schedule_id', sa.Integer(), nullable=True),
     sa.Column('date', sa.Date(), nullable=False),
-    sa.Column('start_time', sa.Time(), nullable=False),
-    sa.Column('end_time', sa.Time(), nullable=False),
-    sa.Column('capacity', sa.Integer(), nullable=False),
+    sa.Column('starting_time', sa.Time(), nullable=False),
+    sa.Column('ending_time', sa.Time(), nullable=False),
+    sa.Column('capacity', sa.Integer(), nullable=True),
+    sa.Column('duration', sa.Integer(), nullable=True),
+    sa.Column('deleted_at', sa.DateTime(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.ForeignKeyConstraint(['company_id'], ['companies.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['schedule_id'], ['schedules.id'], ondelete='SET NULL'),
     sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('company_id', 'date', 'start_time', 'end_time', name='uq_company_shift_time')
+    sa.UniqueConstraint('company_id', 'date', 'starting_time', 'ending_time', name='uq_company_shift_time')
     )
     with op.batch_alter_table('shifts', schema=None) as batch_op:
         batch_op.create_index('ix_shift_date', ['date'], unique=False)
@@ -83,22 +104,30 @@ def upgrade():
     op.create_table('shift_assignments',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=True),
-    sa.Column('shift_id', sa.Integer(), nullable=False),
+    sa.Column('shift_id', sa.Integer(), nullable=True),
+    sa.Column('updated_by', sa.Integer(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.ForeignKeyConstraint(['shift_id'], ['shifts.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['updated_by'], ['users.id'], ondelete='SET NULL'),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='SET NULL'),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('shift_id', 'user_id', name='uq_shift_user_unique')
     )
     op.create_table('swaps',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('assignment_id', sa.Integer(), nullable=False),
-    sa.Column('requester_id', sa.Integer(), nullable=False),
+    sa.Column('assignment_id', sa.Integer(), nullable=True),
+    sa.Column('company_id', sa.Integer(), nullable=False),
+    sa.Column('requester_id', sa.Integer(), nullable=True),
     sa.Column('responder_id', sa.Integer(), nullable=True),
-    sa.Column('cancelled', sa.Boolean(), nullable=False),
-    sa.Column('status', sa.String(length=20), nullable=False),
+    sa.Column('approved_by', sa.Integer(), nullable=True),
+    sa.Column('status', sa.Enum('pending', 'approved', 'rejected', name='swap_status'), server_default=sa.text("'pending'"), nullable=False),
+    sa.Column('cancelled', sa.Boolean(), server_default=sa.text('false'), nullable=False),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-    sa.Column('updated_at', sa.DateTime(), nullable=True),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.ForeignKeyConstraint(['approved_by'], ['users.id'], ondelete='SET NULL'),
     sa.ForeignKeyConstraint(['assignment_id'], ['shift_assignments.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['company_id'], ['companies.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['requester_id'], ['users.id'], ondelete='SET NULL'),
     sa.ForeignKeyConstraint(['responder_id'], ['users.id'], ondelete='SET NULL'),
     sa.PrimaryKeyConstraint('id')
@@ -114,10 +143,8 @@ def downgrade():
         batch_op.drop_index('ix_shift_date')
 
     op.drop_table('shifts')
+    op.drop_table('schedules')
     op.drop_table('company_users')
-    with op.batch_alter_table('availabilities', schema=None) as batch_op:
-        batch_op.drop_index('ix_company_user_availability_unique')
-
     op.drop_table('availabilities')
     op.drop_table('users')
     op.drop_table('companies')

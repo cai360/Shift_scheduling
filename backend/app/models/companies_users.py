@@ -23,8 +23,15 @@ class CompanyUser(db.Model):
     # Soft delete flag — mark inactive instead of deleting the record
     is_active = db.Column(db.Boolean, default=True)
 
-    user = db.relationship('User', back_populates='company_memberships')
-    company = db.relationship('Company', back_populates='members')
+    user = db.relationship(
+        'User', 
+        back_populates='company_memberships'
+    )
+    
+    company = db.relationship(
+        'Company', 
+        back_populates='members'
+    )
 
     # Ensure a user can only have one record per company
     __table_args__ = (
