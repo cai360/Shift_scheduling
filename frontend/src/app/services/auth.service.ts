@@ -3,48 +3,36 @@ import { HttpService } from './http.service';
 import { Router } from '@angular/router';
 import { tap } from 'rxjs/operators';
 
-
 interface LoginResponse {
   access_token: string;
   refresh_token: string;
-  user: {id: number, email: string, name: string};
+  user: { id: number; email: string; name: string };
 }
 
-@Injectable({
-  providedIn: 'root'
-})
-
-
+@Injectable({ providedIn: 'root' })
 export class AuthService {
   private http = inject(HttpService);
   private router = inject(Router);
 
-  private loggedIn = false;
-  private ACCESS_TOKEN_KEY = 'access_token';
-  private REFRESH_TOKEN_KEY = 'refresh_token';
+  private readonly ACCESS_TOKEN_KEY = 'access_token';
+  private readonly REFRESH_TOKEN_KEY = 'refresh_token';
 
-  login(email: string, password: string){
-    return this.http.doPost<LoginResponse>('auth/login', {email, password}).pipe(
-      tap (res =>{
-        if(res){
-          localStorage.setItem(this.ACCESS_TOKEN_KEY, res.access_token);
-          localStorage.setItem(this.REFRESH_TOKEN_KEY, res.refresh_token);
-          this.loggedIn = true;
-        }
-      })
-    )
-
+  login(email: string, password: string) {
+    return this.http
+      .doPost<LoginResponse>('auth/login', { email, password })
+      .pipe(
+        tap((res) => {
+          if (res) {
+            this.saveTokens(res.access_token, res.refresh_token);
+          }
+        })
+      );
   }
 
-  logout(){
+  logout() {
     localStorage.removeItem(this.ACCESS_TOKEN_KEY);
     localStorage.removeItem(this.REFRESH_TOKEN_KEY);
-    this.loggedIn = false;
     this.router.navigate(['/login']);
-  }
-
-  isloggedIn(): boolean {
-    return this.loggedIn;
   }
 
   getAccessToken(): string | null {
@@ -57,26 +45,24 @@ export class AuthService {
 
   saveTokens(access: string, refresh: string) {
     localStorage.setItem(this.ACCESS_TOKEN_KEY, access);
-    if (refresh) {
-      localStorage.setItem(this.REFRESH_TOKEN_KEY, refresh);
-    }
+    if (refresh) localStorage.setItem(this.REFRESH_TOKEN_KEY, refresh);
   }
-  
+
   isAuthenticated(): boolean {
-    const token = this.getAccessToken();
-    return !!token;
+    return !!this.getAccessToken();
   }
 
   refreshAccessToken() {
     const refreshToken = this.getRefreshToken();
-    if(!refreshToken){ throw new Error('No refresh token'); }
-    return this.http.doPost<LoginResponse>('auth/refresh', {refresh_Token: refreshToken}).pipe(
-      tap(res => {
-        if(res?.access_token){
-          localStorage.setItem(this.ACCESS_TOKEN_KEY, res.access_token);
-        }
-      })
-    );
+    if (!refreshToken) throw new Error('No refresh token');
+    return this.http
+      .doPost<LoginResponse>('auth/refresh', { refresh_token: refreshToken })
+      .pipe(
+        tap((res) => {
+          if (res?.access_token) {
+            localStorage.setItem(this.ACCESS_TOKEN_KEY, res.access_token);
+          }
+        })
+      );
   }
-  
 }
