@@ -34,9 +34,9 @@ export class ModelService {
     this._messages.next({ type, text });
   }
 
-  success(text: string) { this.push('success', text); }
-  error(text: string) { this.push('error', text); }
-  warning(text: string) { this.push('warning', text); }
-  info(text: string) { this.push('info', text); }
+  success(text: string) { console.log(this.push('success', text)); }
+  error(text: string) { console.log(this.push('error', text)); }
+  warning(text: string) { console.log(this.push('warning', text)); }
+  info(text: string) { console.log(this.push('info', text)); }
 
 }
