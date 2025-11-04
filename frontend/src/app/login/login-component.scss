@@ -48,7 +48,7 @@
             }
         }
 
-        .having-troble-mess{
+        .havingtroble-mess{
 
             font-size: 0.9rem;
         }
@@ -62,6 +62,16 @@
             box-shadow: inset;
             font-weight: 500;
             margin-bottom: 1rem;
+            transition: all 0.1s ease-in-out;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+
+            &:hover {
+              background-color: color.$rhino-300;
+            }
+            &:active {
+              background-color: color.$rhino-500;
+              transform: scale(0.97); 
+            } 
         }
 
         .sign-in-with{
@@ -118,6 +128,7 @@
     .login-inner-container {
       padding: 1.5rem;
     }
+    
 
     .sign-in-with .sign-in-btn-group {
       flex-direction: column;
