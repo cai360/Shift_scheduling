@@ -14,7 +14,6 @@ class User(db.Model):
     created_at = db.Column(db.DateTime, server_default=db.func.now(), nullable=False)
     updated_at = db.Column(db.DateTime, onupdate=db.func.now(), server_default=db.func.now(), nullable=False)
 
-    # Relationships
     company_memberships = db.relationship('CompanyUser', back_populates='user', cascade='save-update, merge', lazy='selectin')
 
     shift_assignments = db.relationship(

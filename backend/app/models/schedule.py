@@ -19,14 +19,12 @@ class Schedule(db.Model):
     start_date = db.Column(db.Date, nullable=False)
     end_date = db.Column(db.Date, nullable=False)
 
-    # Whether the schedule is finalized/published
     published = db.Column(
         db.Boolean,
         nullable=False,
         server_default=db.text('false')
     )
 
-    # Timestamps
     created_at = db.Column(
         db.DateTime,
         server_default=db.func.now(),
@@ -39,7 +37,6 @@ class Schedule(db.Model):
         nullable=False
     )
 
-    # Relationships
     company = db.relationship(
         'Company',
         back_populates='schedules'

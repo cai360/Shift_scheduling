@@ -1,3 +1,4 @@
+# app/utils/result.py
 from flask import jsonify
 
 SUCCESS = 0
@@ -14,10 +15,12 @@ def success_res(data=None, message="OK", code=SUCCESS, status=200):
         "data": data
     }), status
 
-def error_res(message="Error", code=INTERNAL_SERVER_ERROR, status=400):
-    return jsonify({
+def error_res(message="Error", code=INTERNAL_SERVER_ERROR, status=400, errors=None):
+    payload = {
         "resultCode": code,
         "message": message,
         "data": None
-
-    }), status
+    }
+    if errors is not None:
+        payload["errors"] = errors  
+    return jsonify(payload), status

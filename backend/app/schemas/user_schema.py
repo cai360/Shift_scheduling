@@ -4,15 +4,13 @@ from marshmallow.validate import Length
 class UserCreateSchema(Schema):
     username = fields.String(
         required=True,
-        validate=Length(min=2, max=64),
-        description="Username must be between 2 and 64 characters."
+        validate=Length(min=2, max=64)
     )
     email = fields.Email(required=True)
     password = fields.String(
         required=True,
         load_only=True,
-        validate=Length(min=8),
-        description="Password must be at least 8 characters long."
+        validate=Length(min=8)
     )
 class UserUpdateSchema(Schema):
     username = fields.String(required=False, validate=Length(min=2, max=64))
@@ -25,7 +23,6 @@ class UserUpdatePasswordSchema(Schema):
         required=True,
         load_only=True,
         validate=Length(min=8),
-        description="New password must be at least 8 characters long."
     )
 
 class LoginSchema(Schema):

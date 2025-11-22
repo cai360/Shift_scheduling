@@ -12,14 +12,11 @@ class Company(db.Model):
     name = db.Column(db.String(100), nullable=False, unique=True)
     description = db.Column(db.Text, nullable=True)
 
-    # --- Settings ---
     require_swap_approval = db.Column(
         db.Boolean,
         nullable=False,
         server_default=db.text('true')  
     )
-
-    # --- Soft delete flags ---
     is_active = db.Column(
         db.Boolean,
         nullable=False,
@@ -27,7 +24,6 @@ class Company(db.Model):
     )
     deleted_at = db.Column(db.DateTime, nullable=True)
 
-    # --- Timestamps ---
     created_at = db.Column(
         db.DateTime,
         server_default=db.func.now(),
@@ -40,7 +36,6 @@ class Company(db.Model):
         nullable=False
     )
 
-    # --- Relationships ---
     members = db.relationship(
         'CompanyUser',
         back_populates='company',

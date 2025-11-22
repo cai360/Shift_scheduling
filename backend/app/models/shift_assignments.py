@@ -13,7 +13,6 @@ class ShiftAssignment(db.Model):
     created_at = db.Column(db.DateTime, server_default=db.func.now(), nullable=False)
     updated_at = db.Column(db.DateTime, onupdate=db.func.now(), server_default=db.func.now(), nullable=False)
 
-    # --- Relationships ---
     user = db.relationship(
         'User',
         foreign_keys=[user_id],

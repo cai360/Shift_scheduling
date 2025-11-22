@@ -28,15 +28,12 @@ class Shift(db.Model):
     ending_time = db.Column(db.Time, nullable=False)
     capacity = db.Column(db.Integer, nullable=True)
 
-    # Duration (in minutes)
     duration = db.Column(db.Integer, nullable=True)
 
-    # Soft delete + timestamps
     deleted_at = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, server_default=db.func.now(), nullable=False)
     updated_at = db.Column(db.DateTime, onupdate=db.func.now(), server_default=db.func.now(), nullable=False)
 
-    # Relationships
     company = db.relationship('Company', back_populates='shifts')
     schedule = db.relationship('Schedule', back_populates='shifts')
 
@@ -46,13 +43,11 @@ class Shift(db.Model):
         cascade='all, delete-orphan'
     )
 
-    # Constraints
     __table_args__ = (
         UniqueConstraint('company_id', 'date', 'starting_time', 'ending_time', name='uq_company_shift_time'),
         db.Index('ix_shift_date', 'date'),
     )
 
-    # --- Methods ---
     def calculate_duration(self):
         """Calculate duration in minutes from starting_time and ending_time."""
         if self.starting_time and self.ending_time:
