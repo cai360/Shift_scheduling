@@ -7,8 +7,8 @@ class Company(BaseModel):
 
     name = db.Column(db.String(128), nullable=False, unique=True)
     description = db.Column(db.Text, nullable=True)
-    is_active = db.Column(db.boolean, nullable= False, default=True)
-    deleted_at = db.Column(db.Datetime(timezone=True), nullable=True)
+    is_active = db.Column(db.Boolean, nullable= False, default=True)
+    deleted_at = db.Column(db.DateTime(timezone=True), nullable=True)
     
 
    
