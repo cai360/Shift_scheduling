@@ -1,44 +1,46 @@
 from app.extensions import db
 from datetime import datetime
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import text
+from .base import BaseModel
 
-class CompanyUser(db.Model):
+class CompanyUser(BaseModel):
     """
     Association table linking users and companies.
-    Supports soft deletion (is_active, left_at) to track join and leave history.
+    Support one user and belong in multiple companies
     """
     __tablename__ = 'company_users'
-
-    id = db.Column(db.Integer, primary_key=True)
-
     #  automatically delete related records if user/company is hard deleted
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    company_id = db.Column(db.Integer, db.ForeignKey("companies.id", ondelete="CASCADE"), nullable=False)
+    user_id = db.Column(UUID(as_uuid=True),
+                        db.ForeignKey("users.id", 
+                        ondelete="CASCADE"),
+                        nullable=False)
+    
+    company_id = db.Column(UUID(as_uuid=True),
+                           db.ForeignKey("companies.id", 
+                           ondelete="CASCADE"),
+                           nullable=False)
 
     # Role within the company (e.g., manager or employee)
-    role = db.Column(db.String(20), nullable=False)
+    role = db.Column(db.String(32), 
+                     nullable=False, 
+                     default="employee")
 
-    joined_at = db.Column(db.DateTime, server_default=db.func.now())
-    left_at = db.Column(db.DateTime)
+    # NULL = active membership
+    deleted_at = db.Column(db.DateTime(timezone=True), nullable=True)
 
-    # Soft delete flag — mark inactive instead of deleting the record
-    is_active = db.Column(db.Boolean, default=True)
-
-    user = db.relationship(
-        'User', 
-        back_populates='company_memberships'
-    )
-    
-    company = db.relationship(
-        'Company', 
-        back_populates='members'
-    )
-
-    # Ensure a user can only have one record per company
     __table_args__ = (
-        db.UniqueConstraint('company_id', 'user_id', name='uq_company_user_unique'),
+        db.CheckConstraint( "role IN ('manager','employee')",name="ck_company_users_role"),
+                # partial unique index → one active membership per company
+        db.Index(
+            "uq_company_user_active",
+            "company_id",
+            "user_id",
+            unique=True,
+            postgresql_where=text("deleted_at IS NULL")#把一段純 SQL 字串包成可被 SQLAlchemy 理解的 SQL 物件
+        ),
     )
 
-    def deactivate(self):
-        """Mark this membership as inactive and set the leave timestamp."""
-        self.is_active = False
-        self.left_at = datetime.utcnow()
+
+   
+ 
