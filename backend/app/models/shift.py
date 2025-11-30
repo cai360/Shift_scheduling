@@ -42,6 +42,7 @@ class Shift(BaseModel):
     )
 
 
+    #calculate the duration 
     @hybrid_property 
     def duration(self):
         if not self.starting_time or not self.ending_time:
