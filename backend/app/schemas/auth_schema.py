@@ -1,5 +1,4 @@
 from marshmallow import Schema, fields, validate
-from marshmallow.validate import Length
 
 class LoginSchema(Schema):
     email = fields.Email(required=True)
@@ -9,6 +8,8 @@ class LoginSchema(Schema):
     )
 
 class TokenOutSchema(Schema):
-    """Schema for returning JWT tokens after login/refresh."""
     access_token = fields.String(required=True)
+    refresh_token = fields.String(required=True)
+
+class RefreshSchema(Schema):
     refresh_token = fields.String(required=True)
