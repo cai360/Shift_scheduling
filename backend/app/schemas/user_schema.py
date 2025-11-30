@@ -1,58 +1,32 @@
 from marshmallow import Schema, fields, validate
-from marshmallow.validate import Length
 
 class UserCreateSchema(Schema):
     username = fields.String(
         required=True,
-        validate=Length(min=2, max=64)
+        validate=validate.Length(min=2, max=64)
     )
     email = fields.Email(required=True)
     password = fields.String(
         required=True,
         load_only=True,
-        validate=Length(min=8)
+        validate=validate.Length(min=8)
     )
 class UserUpdateSchema(Schema):
-    username = fields.String(required=False, validate=Length(min=2, max=64))
+    username = fields.String(required=False, validate=validate.Length(min=2, max=64))
     email = fields.Email(required=False)
-    active = fields.Boolean(required=False)
 
 class UserUpdatePasswordSchema(Schema):
-    id = fields.Integer(required=True)
+    id = fields.UUID(required=True)
     password = fields.String(
         required=True,
         load_only=True,
-        validate=Length(min=8),
+        validate=validate.Length(min=8)
     )
-
-class LoginSchema(Schema):
-    email = fields.Email(required=True)
-    password = fields.String(
-        required=True,
-        load_only=True,
-        validate=Length(min=8)
-    )
-
-class TokenOutSchema(Schema):
-    access_token = fields.String(required=True)
-    refresh_token = fields.String(required=True)
-
-
-class CompanyMembershipSchema(Schema):
-    company_id = fields.Integer()
-    company_name = fields.String(attribute="company.name")
-    role = fields.String()
-    is_active = fields.Boolean()
-    joined_at = fields.DateTime()
 
 class UserOutSchema(Schema):
-    id = fields.Integer()
+    id = fields.UUID(dump_only=True)
     username = fields.String()
     email = fields.Email()
-    active = fields.Boolean()
-    memberships = fields.List(
-        fields.Nested(CompanyMembershipSchema),
-        attribute="company_memberships"
-    )
-    created_at = fields.DateTime()
-    updated_at = fields.DateTime()
+
+    created_at = fields.DateTime(dump_only=True)
+    updated_at = fields.DateTime(dump_only=True)
