@@ -1,5 +1,4 @@
 from app.extensions import db
-from sqlalchemy import UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from .base import BaseModel
 from sqlalchemy.sql import func 

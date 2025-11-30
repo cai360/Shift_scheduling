@@ -14,12 +14,6 @@ class Shift(BaseModel):
         nullable=False
     )
 
-    schedule_id = db.Column(
-        UUID(as_uuid=True),
-        db.ForeignKey('schedules.id', ondelete='SET NULL'),
-        nullable=True
-    )
-
     date = db.Column(db.Date, nullable=False)
 
     capacity = db.Column(db.Integer, nullable=True)
