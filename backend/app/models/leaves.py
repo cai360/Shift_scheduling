@@ -16,6 +16,8 @@ class Leave(BaseModel):
         db.ForeignKey('users.id', ondelete='CASCADE'),
         nullable=True
     )
+
+    status = db.Column(db.String(32), nullable=False, default="pending")
     
     start_date = db.Column(db.Date, nullable=False)
     end_date = db.Column(db.Date, nullable=False)
