@@ -1,14 +1,23 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request,g
 from app.extensions import db
 from app.models.user import User
 from app.schemas.user_schema import UserCreateSchema, UserOutSchema
 from app.schemas.auth_schema import LoginSchema, RefreshSchema
 from app.services.user_service import UserService
 from app.services.auth_service import AuthService
-from backend.app.utils.response import ok, error
+from app.utils.response import ok, error
 from marshmallow import ValidationError
+from app.utils.auth_decorators import jwt_required
 
 bp = Blueprint("auth", __name__, url_prefix="/auth")
+
+@bp.get("/me")
+@jwt_required
+def get_me():
+    user = User.query.get(g.user_id)
+    if not user:
+        return error("User not found", 404)
+    return ok(UserOutSchema().dump(user), 200)
 
 @bp.post("/register")
 def register():
@@ -30,7 +39,7 @@ def register():
     db.session.add(user)
     db.session.commit()
 
-    return ok(data =UserOutSchema().dump(user), status=201)
+    return ok(UserOutSchema().dump(user), status=201)
 
 @bp.post("/login")
 def login():
