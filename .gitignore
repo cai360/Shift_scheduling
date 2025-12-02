@@ -10,7 +10,7 @@ venv/
 
 # Flask dotenv
 .env
-.env.*
+.env.
 
 # SQLite
 *.db
