@@ -3,7 +3,6 @@ from app.extensions import db
 from app.models.user import User
 from app.schemas.user_schema import UserCreateSchema, UserOutSchema
 from app.schemas.auth_schema import LoginSchema, RefreshSchema
-from app.services.user_service import UserService
 from app.services.auth_service import AuthService
 from app.utils.response import ok, error
 from marshmallow import ValidationError

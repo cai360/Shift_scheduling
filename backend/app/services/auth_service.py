@@ -82,28 +82,28 @@ class AuthService:
         except jwt.InvalidTokenError:
             raise ValueError("Token invalid")
 
-@staticmethod
-def issue_access_from_refresh(refresh_token: str) -> dict:
+    @staticmethod
+    def issue_access_from_refresh(refresh_token: str) -> dict:
 
-    payload = AuthService.decode_token(refresh_token, "refresh")
+        payload = AuthService.decode_token(refresh_token, "refresh")
 
-    user_id = payload["sub"] #subject
+        user_id = payload["sub"] #subject
 
-    secret = AuthService._cfg("JWT_SECRET")
-    if not secret:
-        raise RuntimeError("JWT_SECRET not configured")
+        secret = AuthService._cfg("JWT_SECRET")
+        if not secret:
+            raise RuntimeError("JWT_SECRET not configured")
 
-    now = datetime.now(timezone.utc)
-    access_minutes = int(AuthService._cfg("JWT_ACCESS_EXPIRES_MINUTES", 15))
+        now = datetime.now(timezone.utc)
+        access_minutes = int(AuthService._cfg("JWT_ACCESS_EXPIRES_MINUTES", 15))
 
-    a = {
-        "sub": str(user_id), 
-        "type": "access",
-        "iat": int(now.timestamp()),
-        "exp": int((now + timedelta(minutes=access_minutes)).timestamp())
-    }
+        a = {
+            "sub": str(user_id), 
+            "type": "access",
+            "iat": int(now.timestamp()),
+            "exp": int((now + timedelta(minutes=access_minutes)).timestamp())
+        }
 
-    return {"access_token": jwt.encode(a, secret, algorithm="HS256")}
+        return {"access_token": jwt.encode(a, secret, algorithm="HS256")}
 
 
 
