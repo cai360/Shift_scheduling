@@ -1,5 +1,5 @@
 from flask import Blueprint, request,g
-from app.extensions import db
+from app.extensions import db 
 from app.models.user import User
 from app.schemas.user_schema import UserCreateSchema, UserOutSchema
 from app.schemas.auth_schema import LoginSchema, RefreshSchema
@@ -18,6 +18,8 @@ def get_me():
         return error("User not found", 404)
     return ok(UserOutSchema().dump(user), 200)
 
+
+#TODO #in the controller layer shouldn't intetactive with db
 @bp.post("/register")
 def register():
     try:
