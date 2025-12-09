@@ -2,7 +2,7 @@ from app.models.user import User
 from app.models.companies import Company
 from app.extensions import db
 from app.models.companies_users import CompanyUser
-from datetime import datetime
+from datetime import datetime, timezone
 
 class CompanyService:
 
@@ -86,7 +86,7 @@ class CompanyService:
         if not company_user or company_user.role != "manager":
             raise PermissionError("Only manager can delete this company.")
 
-        company.deleted_at = datetime.utcnow()
+        company.deleted_at = datetime.now(timezone.utc)
         db.session.commit()
         return True
 
