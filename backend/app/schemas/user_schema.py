@@ -16,8 +16,8 @@ class UserUpdateSchema(Schema):
     email = fields.Email(required=False)
 
 class UserUpdatePasswordSchema(Schema):
-    id = fields.UUID(required=True)
-    password = fields.String(
+    old_password = fields.String(required=True, load_only=True)
+    new_password = fields.String(
         required=True,
         load_only=True,
         validate=validate.Length(min=8)
