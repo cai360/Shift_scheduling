@@ -48,6 +48,7 @@ class CompanyService:
             .join(CompanyUser, CompanyUser.company_id == Company.id)
             .filter(
                 CompanyUser.user_id == user_id,
+                CompanyUser.deleted_at.is_(None), 
                 Company.deleted_at.is_(None)
             )
             .all()
