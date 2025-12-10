@@ -56,6 +56,9 @@ class UserService:
         now = datetime.now(timezone.utc)
         user.deleted_at = now
         user.updated_at = now
+        #release the email
+        user.email = f"{user.email}.deleted.{user.id}"
+
         memberships = CompanyUser.query.filter_by(
             user_id = user_id,
             deleted_at = None
