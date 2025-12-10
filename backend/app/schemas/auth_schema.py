@@ -7,6 +7,14 @@ class LoginSchema(Schema):
         load_only=True
     )
 
+class RegisterSchema(Schema):
+    username = fields.String(required=True)
+    email = fields.Email(required=True)
+    password = fields.String(
+        required=True,
+        load_only=True
+    )
+
 class TokenOutSchema(Schema):
     access_token = fields.String(required=True)
     refresh_token = fields.String(required=True)
