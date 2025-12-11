@@ -16,7 +16,7 @@ class CompanyUser(BaseModel):
                         nullable=False)
     
     company_id = db.Column(UUID(as_uuid=True),
-                           db.ForeignKey("companies.id"),
+                           db.ForeignKey("companies.id", ondelete="CASCADE"),
                            nullable=False)
 
     # Role within the company (e.g., manager or employee)
