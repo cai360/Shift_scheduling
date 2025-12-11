@@ -13,7 +13,7 @@ class Leave(BaseModel):
 
     user_id = db.Column(
         UUID(as_uuid=True),
-        db.ForeignKey('users.id', ondelete='CASCADE'),
+        db.ForeignKey('users.id', ondelete='SET NULL'),
         nullable=True
     )
 
