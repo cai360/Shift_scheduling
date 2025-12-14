@@ -8,7 +8,12 @@ from .extensions import db, migrate
 from .api import api_bp
 from .config import Config
 from app.utils.error_handlers import register_error_handlers
+import logging
 
+logging.basicConfig(
+        level=logging.INFO,
+        format="[%(asctime)s] %(levelname)s in %(module)s: %(message)s"
+)
 
 def create_app(config_object=None):
     app = Flask(__name__)
