@@ -6,11 +6,9 @@ from app.utils.auth_decorators import jwt_required
 from app.utils.response import ok, error
 from app.services.companny_service import CompanyService
 
-bp = Blueprint("company", __name__, url_prefix="company")
+bp = Blueprint("companies", __name__, url_prefix="/companies")
 
-@bp.post("/companies")
-@jwt_required
-@bp.post("/companies")
+@bp.post("")
 @jwt_required
 def create_company():
     data = CompanyCreateSchema().load(request.json or {})
@@ -25,7 +23,7 @@ def get_company(company_id):
     return ok(CompanyOutSchema().dump(company))
 
 # List companies for the current user
-@bp.get("/companies")
+@bp.get("")
 @jwt_required
 def list_for_user():
     companies = CompanyService.list_companies_for_user(g.user_id)
@@ -42,7 +40,7 @@ def update_company(company_id):
 @jwt_required
 def delete_company(company_id):
     CompanyService.soft_delete_company(company_id, g.user_id)
-    return ok(None, 204)
+    return "", 204
 
 
 @bp.post("/<company_id>/join")
