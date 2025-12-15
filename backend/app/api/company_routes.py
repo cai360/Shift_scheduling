@@ -10,8 +10,6 @@ bp = Blueprint("company", __name__, url_prefix="company")
 
 @bp.post("/companies")
 @jwt_required
-@bp.post("/companies")
-@jwt_required
 def create_company():
     data = CompanyCreateSchema().load(request.json or {})
     company = CompanyService.create_company(data, g.user_id)
