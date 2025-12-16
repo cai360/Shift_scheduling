@@ -6,8 +6,7 @@ from app.utils.auth_decorators import jwt_required
 from app.utils.response import ok, error
 from app.services.company_service import CompanyService
 
-bp = Blueprint("companies", __name__, url_prefix=""
-"/companies")
+bp = Blueprint("companies", __name__, url_prefix="/companies")
 
 @bp.post("")
 @jwt_required
