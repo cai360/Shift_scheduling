@@ -1,23 +1,24 @@
 from marshmallow import Schema, fields, validate
 
-class UserCreateSchema(Schema):
-    username = fields.String(
-        required=True,
-        validate=validate.Length(min=2, max=64)
-    )
-    email = fields.Email(required=True)
-    password = fields.String(
-        required=True,
-        load_only=True,
-        validate=validate.Length(min=8)
-    )
+#no need for mvp
+# class UserCreateSchema(Schema):
+#     username = fields.String(
+#         required=True,
+#         validate=validate.Length(min=2, max=64)
+#     )
+#     email = fields.Email(required=True)
+#     password = fields.String(
+#         required=True,
+#         load_only=True,
+#         validate=validate.Length(min=8)
+#     )
 class UserUpdateSchema(Schema):
     username = fields.String(required=False, validate=validate.Length(min=2, max=64))
     email = fields.Email(required=False)
 
 class UserUpdatePasswordSchema(Schema):
-    id = fields.UUID(required=True)
-    password = fields.String(
+    old_password = fields.String(required=True, load_only=True)
+    new_password = fields.String(
         required=True,
         load_only=True,
         validate=validate.Length(min=8)

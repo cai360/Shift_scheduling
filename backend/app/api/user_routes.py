@@ -1,60 +1,52 @@
 from flask import Blueprint, request, g
 from app.utils.auth_decorators import jwt_required
 from marshmallow import ValidationError
-
-from app import models
+from app.models.user import User
 from app.extensions import db
-from app.schemas.user_schema import UserCreateSchema, UserOutSchema, UserUpdateSchema
+from app.schemas.user_schema import *
 from app.services.user_service import UserService
-#from app.utils.response import ok, error  
+from app.utils.response import ok, error  
 
 bp = Blueprint("users", __name__, url_prefix="/users")
 
 
-# @bp.get("/me")
-# @jwt_required
-# def get_me():
-#     return success_res({"user_id": g.user_id}, "Get current user success")
+@bp.get("/me")
+@jwt_required
+def get_me():
+    user = UserService.get_user(g.user_id)
+    return ok(UserOutSchema().dump(user), 200)
 
 
-# @bp.post("")
-# def create_user():
-#     payload = request.get_json(silent=True) or {}
-
-#     data = UserCreateSchema().load(payload)
-#     user = UserService.create_user(data)
-
-#     return success_res(UserOutSchema().dump(user), "Create user success", status=201)
+@bp.patch("/me")
+@jwt_required
+def update_me():
+    data = UserUpdateSchema().load(request.json or {})
+    user = UserService.update_user(g.user_id, data)
+    return ok(UserOutSchema().dump(user))
 
 
-# @bp.get("/<int:user_id>")
-# @jwt_required
-# def get_user(user_id: int):
-#     user = db.session.get(models.User, user_id)
-#     if not user:
-#         raise ValueError("User not found")
-
-#     return success_res(UserOutSchema().dump(user), "Get user success")
+@bp.delete("/me")
+@jwt_required
+def delete_me():
+    UserService.soft_delete_user(g.user_id)
+    return "", 204
 
 
-# @bp.patch("/<int:user_id>")
-# @jwt_required
-# def update_user(user_id: int):
-#     payload = request.get_json(silent=True) or {}
-#     data = UserUpdateSchema(partial=True).load(payload)
-#     user = UserService.update_user(user_id, data)
-#     return success_res(UserOutSchema().dump(user), "Update user success")
+@bp.patch("/me/password")
+@jwt_required
+def update_password():
+    payload = request.get_json(silent=True) or {}
 
+    try:
+        data = UserUpdatePasswordSchema().load(payload)
+    except ValidationError as err:
+        return error("Validation error", 400, err.messages)
 
-# @bp.delete("/<int:user_id>")
-# @jwt_required
-# def delete_user(user_id: int):
-#     user = UserService.delete_user(user_id) 
-#     return success_res(UserOutSchema().dump(user), "Delete user success")
+    UserService.update_user_password(
+        user_id=g.user_id,
+        old_password=data["old_password"],
+        new_password=data["new_password"]
+    )
 
+    return ok({"message": "Password updated successfully"}, 200)
 
-# @bp.get("")
-# @jwt_required
-# def get_all_users():
-#     users = models.User.query.order_by(models.User.id.desc()).all()
-#     return success_res(UserOutSchema(many=True).dump(users), "Get all users success")
