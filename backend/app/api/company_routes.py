@@ -4,7 +4,7 @@ from app.models.companies import Company
 from app.schemas.company_schema import * 
 from app.utils.auth_decorators import jwt_required
 from app.utils.response import ok, error
-from app.services.companny_service import CompanyService
+from app.services.company_service import CompanyService
 
 bp = Blueprint("companies", __name__, url_prefix="/companies")
 

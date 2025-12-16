@@ -1,66 +1,86 @@
-
+from app.models.user import User
 from sqlalchemy.exc import IntegrityError
 from app.extensions import db
-from app import models
+from app.models.companies_users import CompanyUser
 from app.services.auth_service import AuthService
+from datetime import datetime, timezone
 
 class UserService:
-    @staticmethod
-    def _pwd_field() -> str:
-        if hasattr(models.User, "hash") : return "hash"
-        if hasattr(models.User, "password_hash") : return "password_hash"
-        
 
     @staticmethod
-    def find_user_by_email(email: str | None):
-        U = models.User
-        if not hasattr(U, "email"):
-            return None
-        return U.query.filter(U.email == email).first()
-        
+    def get_user(user_id):
+        user = User.query.filter_by(
+            id=user_id, 
+            deleted_at=None
+        ).first()
 
-    @staticmethod
-    def create_user(data: dict) -> models.User:
-        if "password" in data and data["password"]:
-            field = UserService._pwd_field()
-            data[field] = AuthService.hash_password(data.pop("password"))
-        user = models.User(**data)
-        db.session.add(user)
-        try: db.session.commit()
-        except IntegrityError as e:
-            db.session.rollback()
-            raise ValueError("oh no something is wrong", e)
-        return user
-    
-
-    @staticmethod
-    def update_user(id: int, data: dict) -> models.User:
-        user = db.session.get(models.User, id)
         if not user:
             raise ValueError("User not found")
-        if "password" in data and data["password"]:
-            field = UserService._pwd_field()
-            setattr(user, field, AuthService.hash_password(data.pop("password")))   
+        return user
+    
+    @staticmethod
+    def update_user(user_id, data):
+        user = UserService.get_user(user_id)
 
+        if "email" in data:
+            existing = User.query.filter_by(email=data["email"]).first()
+            if existing and existing.id != user_id:
+                raise ValueError("Email already exists")
+        
         for key, value in data.items():
             setattr(user, key, value)
-        try:
-            db.session.commit()
-        except IntegrityError as e:
-            db.session.rollback()
-            raise ValueError("oh no something is wrong")
+        user.updated_at = datetime.now(timezone.utc)
+
+        db.session.commit()
         return user
-    
+
+
+    @staticmethod
+    def update_user_password(user_id, old_password, new_password):
+        user = UserService.get_user(user_id)
+        
+        if not AuthService.verify_password(old_password, user.hash):
+            raise ValueError("Old password is incorrect")
+        
+        hash_password = AuthService.hash_password(new_password)
+        user.hash = hash_password
+        user.updated_at = datetime.now(timezone.utc)
+
+        db.session.commit()
+        return {"message": "Password updated"}
 
     
     @staticmethod
-    def delete_user(id:int) -> models.User:
-        user = db.session.get(models.User, id)
-        if not user:
-            raise ValueError("User not found")
-        user.active = False
+    def soft_delete_user(user_id):
+        user = UserService.get_user(user_id)
+        now = datetime.now(timezone.utc)
+        user.deleted_at = now
+        user.updated_at = now
+        #release the email
+        user.email = f"{user.email}.deleted.{user.id}"
+
+        memberships = CompanyUser.query.filter_by(
+            user_id = user_id,
+            deleted_at = None
+        ).all()
+
+        for c_u in memberships:
+            c_u.deleted_at = now
+
         db.session.commit()
-        return user
+        return {"message": "User's account deleted!"}
+
+    #check user role (TODO in the future)
+    @staticmethod
+    def check_permission(user_id, action):
+        ...
+
+    
+        
+
+  
+    
+
     
 
 
