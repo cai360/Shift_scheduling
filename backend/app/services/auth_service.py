@@ -4,8 +4,37 @@ import jwt
 from datetime import datetime, timedelta, timezone
 from flask import current_app
 from app.models.user import User
+from app.extensions import db
+from sqlalchemy.exc import IntegrityError
+
+class RegisterError(Exception):
+    pass
+
 
 class AuthService:
+    @staticmethod
+    def register_user(username: str, email: str, password: str) -> User:
+        existing = User.query.filter_by(email=email).first()
+        if existing:
+            raise RegisterError("Email already exists")
+
+        hashed = AuthService.hash_password(password)
+
+        user = User(
+            username=username,
+            email=email,
+            hash=hashed,
+        )
+
+        try:
+            db.session.add(user)
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            raise RegisterError("Failed to create user")
+
+        return user
+        
     @staticmethod
     def _cfg(name: str, default=None):
         val = current_app.config.get(name)
@@ -26,6 +55,7 @@ class AuthService:
             return bcrypt.checkpw(plain.encode("utf-8"), hashed.encode("utf-8"))
         except Exception:
             return False
+    
         
     @staticmethod
     def  authenticate(email: str, password: str):

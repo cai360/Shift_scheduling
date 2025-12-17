@@ -1,9 +1,9 @@
 from flask import Blueprint, request,g
-from app.extensions import db
+from app.extensions import db 
 from app.models.user import User
-from app.schemas.user_schema import UserCreateSchema, UserOutSchema
-from app.schemas.auth_schema import LoginSchema, RefreshSchema
-from app.services.auth_service import AuthService
+from app.schemas.user_schema import UserOutSchema
+from app.schemas.auth_schema import *
+from app.services.auth_service import AuthService, RegisterError
 from app.utils.response import ok, error
 from marshmallow import ValidationError
 from app.utils.auth_decorators import jwt_required
@@ -18,27 +18,25 @@ def get_me():
         return error("User not found", 404)
     return ok(UserOutSchema().dump(user), 200)
 
+
+#TODO #in the controller layer shouldn't intetactive with db
 @bp.post("/register")
 def register():
     try:
-        data = UserCreateSchema().load(request.json or {})
-    except Exception as err:
-        return error("Validation error", status=400, details=err.messages)
+        payload = RegisterSchema().load(request.json or {})
+    except ValidationError as err:
+        return error("Validation error", 400, err.messages)
 
-    existing = User.query.filter_by(email=data["email"]).first()
-    if existing:
-        return error("Email already exists", status=409)
-    
-    user = User(
-        username = data["username"],
-        email = data["email"],
-        hash = AuthService.hash_password(data["password"])
-    )
+    try:
+        user = AuthService.register_user(
+            username=payload["username"],
+            email=payload["email"],
+            password=payload["password"]
+        )
+    except RegisterError as err:
+        return error(str(err), 409)
 
-    db.session.add(user)
-    db.session.commit()
-
-    return ok(UserOutSchema().dump(user), status=201)
+    return ok(UserOutSchema().dump(user), 201)
 
 @bp.post("/login")
 def login():
@@ -72,7 +70,7 @@ def refresh():
     return ok(new_access, status=200)
 
 
-
+#TODO refresh_token rotation
 
 
     
