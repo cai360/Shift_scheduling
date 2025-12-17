@@ -12,13 +12,11 @@ class CompanyUser(BaseModel):
     __tablename__ = 'company_users'
     #  automatically delete related records if user/company is hard deleted
     user_id = db.Column(UUID(as_uuid=True),
-                        db.ForeignKey("users.id", 
-                        ondelete="CASCADE"),
+                        db.ForeignKey("users.id"),
                         nullable=False)
     
     company_id = db.Column(UUID(as_uuid=True),
-                           db.ForeignKey("companies.id", 
-                           ondelete="CASCADE"),
+                           db.ForeignKey("companies.id", ondelete="CASCADE"),
                            nullable=False)
 
     # Role within the company (e.g., manager or employee)
