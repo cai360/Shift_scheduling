@@ -17,6 +17,7 @@ class Shift(BaseModel):
     date = db.Column(db.Date, nullable=False)
 
     capacity = db.Column(db.Integer, nullable=True)
+    publish_at = db.Column(db.DateTime(timezone=True), nullable=True)
 
     starting_time = db.Column(db.Time, nullable=False)
     ending_time = db.Column(db.Time, nullable=False)
