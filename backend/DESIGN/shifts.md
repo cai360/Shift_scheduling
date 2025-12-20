@@ -11,6 +11,10 @@ The module focuses on shift generation and lifecycle control, not on employee as
 - A Shift is not an assignment and does not imply that any employee is assigned.
 - Shifts are created in bulk based on generation rules defined by managers.
 
+## Domain
+- A shift represents a planned working time slot created by manager
+- A shift is not an assignment
+
 ## Core Rules
 - A shifts belongs to exactly one company
 - Only company managers can create, updates, or deletes shifts
