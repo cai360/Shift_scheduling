@@ -5,6 +5,8 @@ from app.schemas.company_schema import *
 from app.utils.auth_decorators import jwt_required
 from app.utils.response import ok, error
 from app.services.company_service import CompanyService
+from app.schemas.shift_schema import ShiftCreateRequestSchema, ShiftOutSchema
+from app.services.shift_service import ShiftService
 
 
 
@@ -55,7 +57,6 @@ def join_company(company_id):
         "user_id": str(company_user.user_id),
         "role": company_user.role
     }, 201)
-
 
 
 
