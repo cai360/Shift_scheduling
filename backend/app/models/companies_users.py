@@ -10,7 +10,7 @@ class CompanyUser(BaseModel):
     Support one user and belong in multiple companies
     """
     __tablename__ = 'company_users'
-    #  automatically delete related records if user/company is hard deleted
+    #  automatically delete related records if user/company is hard deleted, but user is Soft delete only in this system
     user_id = db.Column(UUID(as_uuid=True),
                         db.ForeignKey("users.id"),
                         nullable=False)
