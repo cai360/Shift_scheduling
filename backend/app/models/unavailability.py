@@ -18,15 +18,15 @@ class Unavailability(BaseModel):
         nullable=False
     )
 
-    starting_time = db.Column(db.DateTime, nullable=False)
-    ending_time = db.Column(db.DateTime, nullable=False)
+    start_at = db.Column(db.DateTime, nullable=False)
+    end_at = db.Column(db.DateTime, nullable=False)
 
     __table_args__ = (
         db.UniqueConstraint(
             'company_id', 
             'user_id', 
-            'starting_time', 
-            'ending_time',
+            'start_at', 
+            'end_at',
             name='uq_company_user_unavailability'
         ),
     )
