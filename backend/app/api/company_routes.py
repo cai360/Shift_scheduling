@@ -58,7 +58,7 @@ def join_company(company_id):
 @bp.post("/<company_id>/shifts/bulk")
 @jwt_required
 def create_empty_shifts(company_id):
-    payload = request.get_json(slice=True) or {}
+    payload = request.get_json() or {}
     data = ShiftCreateRequestSchema().load(payload)
 
     shifts = ShiftService.create_shifts_bulk(
