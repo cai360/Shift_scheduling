@@ -12,8 +12,9 @@ The module focuses on shift generation and lifecycle control, not on employee as
 - Shifts are created in bulk based on generation rules defined by managers.
 
 ## Domain
-- A shift represents a planned working time slot created by manager
-- A shift is not an assignment
+- A Shift represents a concrete, time-bound working slot.
+- A Shift is not an assignment and does not imply that any employee is assigned.
+- Shifts are created in bulk based on generation rules defined by managers.
 
 ## Core Rules
 - A shifts belongs to exactly one company
@@ -92,4 +93,8 @@ The following extensions can be added without breaking existing behavior:
 	3.	Time-based Capacity Variations
 	•	Capacity rules that vary by time of day.
 	4.	Shift Templates / Rule Persistence
+<<<<<<< HEAD
 	•	Persist reusable generation rules.
+=======
+	•	Persist reusable generation rules.
+>>>>>>> 9344eb6 (feat(shift): add create shfit api)
