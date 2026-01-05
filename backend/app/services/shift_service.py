@@ -47,6 +47,9 @@ class ShiftService:
         # Defensive check (even if schema already validated)
         if start_date > end_date:
             raise ValueError("start_date must be before or equal to end_date")
+        
+        if end_date == start_date and start_time >= end_time:
+            raise ValueError("endtime must be before start time")
 
         start_minutes = minutes_since_midnight(start_time)
         end_minutes = minutes_since_midnight(end_time)
@@ -98,6 +101,28 @@ class ShiftService:
 
         db.session.commit()
         return created_shifts
+    
+    @staticmethod
+    def list_shifts_by_company(*, company_id, user_id):
+        """
+        For mvp, this function will return all shifts from the company whether if the shifts is published or not
+        """
+        CompanyService.get_company(company_id)
+
+        membership = CompanyUserService.get_active_membership(company_id=company_id, user_id=user_id)
+
+        if not membership:
+            raise PermissionError("Not a company member.")
+        
+        shifts = (
+            Shift.query
+                .filter(Shift.company_id == company_id)
+                .order_by(Shift.start_at.asc())
+                .all()
+        )
+
+        return shifts
+
 
 
 def minutes_since_midnight(t):

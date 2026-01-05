@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, g
 from app.schemas.shift_schema import ShiftCreateRequestSchema, ShiftOutSchema
 from app.utils.auth_decorators import jwt_required
 from app.services.shift_service import ShiftService
@@ -11,7 +11,7 @@ bp = Blueprint("shifts", __name__)
 def ping():
     return jsonify({"message": "pong shifts"})
 
-@bp.post("/<company_id>/shifts/bulk")
+@bp.post("companies/<company_id>/shifts/bulk")
 @jwt_required
 def create_empty_shifts(company_id):
     payload = request.get_json() or {}
@@ -26,5 +26,10 @@ def create_empty_shifts(company_id):
     return ok(ShiftOutSchema(many=True).dump(shifts), 201)
 
 @bp.get("/companies/<company_id>/shifts")
-def get_shift():
-    ...
+def get_shifts(company_id):
+    shfits = ShiftService.list_shifts_by_company(
+        company_id=company_id,
+        user_id=g.user_id
+        )
+    
+    return ok(ShiftOutSchema(many=True).dump(shfits))
