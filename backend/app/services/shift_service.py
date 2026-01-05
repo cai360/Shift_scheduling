@@ -104,14 +104,19 @@ class ShiftService:
         
         shifts = (
             Shift.query
+<<<<<<< HEAD
                 .filter(Shift.company_id == company_id,
                         Shift.deleted_at.is_(None))
+=======
+                .filter(Shift.company_id == company_id)
+>>>>>>> 66ed294 (feat(shfit): add list_shifts_by_company api)
                 .order_by(Shift.start_at.asc())
                 .all()
         )
 
         return shifts
 
+<<<<<<< HEAD
 
     @staticmethod
     def publish_shifts(*, company_id, user_id, shift_ids):
@@ -257,6 +262,8 @@ class ShiftService:
         db.session.delete(shift)
         db.session.commit()
 
+=======
+>>>>>>> 66ed294 (feat(shfit): add list_shifts_by_company api)
 
 
 def minutes_since_midnight(t):
