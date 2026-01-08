@@ -25,6 +25,7 @@ def get_company(company_id):
     return ok(CompanyOutSchema().dump(company))
 
 # List companies for the current user
+#TODO: mvoe list_company_for_user to User.route then add list users in a company in company_routes 
 @bp.get("")
 @jwt_required
 def list_for_user():
