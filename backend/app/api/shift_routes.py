@@ -9,7 +9,7 @@ bp = Blueprint("shifts", __name__)
 
 @bp.get("/ping")
 def ping():
-    return jsonify({"message": "pong shifts"})
+    return jsonify({"message": "ping shifts"})
 
 @bp.post("companies/<company_id>/shifts/bulk")
 @jwt_required
@@ -26,6 +26,7 @@ def create_empty_shifts(company_id):
     return ok(ShiftOutSchema(many=True).dump(shifts), 201)
 
 @bp.get("/companies/<company_id>/shifts")
+@jwt_required
 def get_shifts(company_id):
     shfits = ShiftService.list_shifts_by_company(
         company_id=company_id,

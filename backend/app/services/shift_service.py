@@ -44,7 +44,6 @@ class ShiftService:
         interval_minutes = data["interval_minutes"]
         capacity = data["capacity"]
 
-        # Defensive check (even if schema already validated)
         if start_date > end_date:
             raise ValueError("start_date must be before or equal to end_date")
         
