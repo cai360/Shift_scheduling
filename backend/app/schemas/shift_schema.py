@@ -82,6 +82,15 @@ class ShiftBulkDeleteSchema(Schema):
     )
 
 
+class ShiftPublishSchema(Schema):
+    from_date = fields.DateTime(
+        required=True,
+    )
+    to_date = fields.DateTime(
+        required=True,
+    )
+
+
 
 # class WorkingPeriodSchema(Schema):
 #     start_time = fields.Time(required=True)
