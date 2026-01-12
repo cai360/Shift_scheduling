@@ -1,10 +1,5 @@
-from marshmallow import (
-    Schema,
-    fields,
-    validate,
-    validates_schema,
-    ValidationError,
-)
+from marshmallow import (Schema, fields, validate, validates_schema, ValidationError)
+from sqlalchemy.dialects.postgresql import UUID
 
 class ShiftCreateRequestSchema(Schema):
     """
@@ -60,11 +55,10 @@ class ShiftUpdateSchema(Schema):
 
 
 class ShiftPublishSchema(Schema):
-    from_date = fields.DateTime(
-        required=True,
-    )
-    to_date = fields.DateTime(
-        required=True,
+    shift_ids = fields.List(
+        fields = UUID(),
+        required = True,
+        validate = validate.Length(min=1)
     )
 
 

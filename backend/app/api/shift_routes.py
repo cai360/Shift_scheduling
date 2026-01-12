@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request, g
-from app.schemas.shift_schema import ShiftCreateRequestSchema, ShiftOutSchema
+from app.schemas.shift_schema import *
 from app.utils.auth_decorators import jwt_required
 from app.services.shift_service import ShiftService
 from app.utils.response import ok, error
@@ -34,3 +34,20 @@ def get_shifts(company_id):
         )
     
     return ok(ShiftOutSchema(many=True).dump(shfits))
+
+
+@bp.post("/companies/<company_id>/shifts/publish")
+@jwt_required
+def publish_shifts(company_id):
+    payload = request.get_json(silent=True) or {}
+
+    data = ShiftPublishSchema().load(payload)
+
+    result = ShiftService.publish_shifts(
+        company_id=company_id,
+        user_id=g.user_id,
+        shift_ids=data["shift_ids"]
+    )
+
+    return ok(result, 200)
+

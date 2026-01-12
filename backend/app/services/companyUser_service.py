@@ -10,3 +10,15 @@ class CompanyUserService:
             CompanyUser.user_id == user_id,
             CompanyUser.deleted_at.is_(None)
         ).first()
+    
+    @staticmethod
+    def require_manager(*, company_id, user_id):
+        membership = CompanyUserService.get_active_membership(
+            company_id=company_id,
+            user_id=user_id
+        )
+
+        if not membership or membership.role != 'manager':
+            raise PermissionError("Only manager allowed.")
+        
+        return membership

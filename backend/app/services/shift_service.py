@@ -26,16 +26,12 @@ class ShiftService:
         4. Bulk Insert Optimization
            - Shifts are inserted one by one via ORM.
         """
-
         CompanyService.get_company(company_id)
 
-        membership = CompanyUserService.get_active_membership(
-            company_id=company_id,
+        CompanyUserService.require_manager(
+            company_id=company_id, 
             user_id=user_id
         )
-
-        if not membership or membership.role != 'manager':
-            raise PermissionError("Only manager allowed.")
 
         start_date = data["start_date"]
         end_date = data["end_date"]
@@ -121,7 +117,45 @@ class ShiftService:
         )
 
         return shifts
+    
+    @staticmethod
+    def publish_shifts(*, company_id, user_id, shift_ids):
+        CompanyService.get_company(company_id)
 
+        CompanyUserService.require_manager(
+            company_id=company_id, 
+            user_id=user_id
+        )
+
+        candidate_shifts = (
+            Shift.query.filter(
+                Shift.company_id == company_id,
+                Shift.id.in_(shift_ids),
+                Shift.deleted_at.is_(None),
+                Shift.published_at.is_(None)
+            ).all()
+        )
+
+        if not candidate_shifts:
+            return {"requested": len(shift_ids), "published": 0}
+         # TODO (later): overlap check before publishing
+
+        now = datetime.now(tz=UTC_TZ)
+        updated_count = (
+             Shift.query.filter(
+                 Shift.company_id == company_id,
+                 Shift.id.in_(shift_ids),
+                 Shift.deleted_at.is_(None),
+                 Shift.published_at.is_(None),
+             )
+             .update(
+                 {Shift.published_at:now},
+                 synchronize_session=False
+             )
+         )
+        
+        db.session.commit()
+        return {"requested": len(shift_ids), "published": updated_count}
 
 
 def minutes_since_midnight(t):
