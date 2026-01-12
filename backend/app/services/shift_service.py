@@ -5,6 +5,7 @@ from app.services.companyUser_service import CompanyUserService
 from app.models.companies_users import CompanyUser
 from datetime import datetime, timedelta
 from app.config import BUSINESS_TZ, UTC_TZ
+from sqlalchemy import exists, and_
 
 class ShiftService:
 
@@ -111,7 +112,8 @@ class ShiftService:
         
         shifts = (
             Shift.query
-                .filter(Shift.company_id == company_id)
+                .filter(Shift.company_id == company_id,
+                        Shift.deleted_at.is_(None))
                 .order_by(Shift.start_at.asc())
                 .all()
         )
@@ -123,7 +125,7 @@ class ShiftService:
         CompanyService.get_company(company_id)
 
         CompanyUserService.require_manager(
-            company_id=company_id, 
+            company_id=company_id,
             user_id=user_id
         )
 
@@ -136,26 +138,85 @@ class ShiftService:
             ).all()
         )
 
-        if not candidate_shifts:
+        candidate_ids = [shift.id for shift in candidate_shifts]
+
+        if not candidate_ids:
             return {"requested": len(shift_ids), "published": 0}
-         # TODO (later): overlap check before publishing
+
+        if ShiftService._has_overlap_with_published(
+            company_id=company_id,
+            shift_ids=candidate_ids
+        ):
+            raise ValueError(
+                "Cannot publish shifts: overlap with existing published shifts."
+            )
 
         now = datetime.now(tz=UTC_TZ)
+
         updated_count = (
-             Shift.query.filter(
-                 Shift.company_id == company_id,
-                 Shift.id.in_(shift_ids),
-                 Shift.deleted_at.is_(None),
-                 Shift.published_at.is_(None),
-             )
-             .update(
-                 {Shift.published_at:now},
-                 synchronize_session=False
-             )
-         )
-        
+            Shift.query.filter(
+                Shift.company_id == company_id,
+                Shift.id.in_(candidate_ids),
+                Shift.deleted_at.is_(None),
+                Shift.published_at.is_(None),
+            )
+            .update(
+                {Shift.published_at: now},
+                synchronize_session=False
+            )
+        )
+
         db.session.commit()
+
         return {"requested": len(shift_ids), "published": updated_count}
+    
+    @staticmethod
+    def _has_overlap_with_published(*, company_id, shift_ids):
+        """
+        Return True if any candidate shift (id) overlaps with any publised shifts in the same company.
+        """
+        existing = db.aliased(Shift)
+        candidate = db.aliased(Shift)
+
+        overlap_exists_query = (
+            db.session.query(
+                exists().where(
+                    and_(
+                        existing.company_id == company_id,
+                        existing.deleted_at.is_(None),
+                        existing.published_at.isnot(None),
+
+                        candidate.company_id == company_id,
+                        candidate.deleted_at.is_(None),
+                        candidate.published_at.is_(None),
+                        candidate.id.in_(shift_ids),
+
+                        existing.start_at < candidate.end_at,
+                        existing.end_at > candidate.start_at
+                    )                 
+                )
+            )
+        )
+
+        return overlap_exists_query.scalar()
+    
+    def delete_shift(*, shift_id, user_id):
+        """
+        draft shift can be hard delete
+        """
+        shift = Shift.qeury.get_or_404(shift_id)
+        CompanyUserService.require_manager(
+            company_id=shift.company_id,
+            user_id = user_id
+        )
+
+        if shift.published_at is not None:
+            raise ValueError("Cannot delete a published shift.")
+        
+        db.session.delete(shift)
+        db.commit()
+
+
 
 
 def minutes_since_midnight(t):

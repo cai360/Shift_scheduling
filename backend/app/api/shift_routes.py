@@ -51,3 +51,11 @@ def publish_shifts(company_id):
 
     return ok(result, 200)
 
+@bp.delete("/shifts/<shift_id>")
+@jwt_required
+def delect_draft_shift(shift_id):
+    ShiftService.delete_shift(
+        shift_id=shift_id,
+        user_id=g.user_id
+    )
+    return "", 204

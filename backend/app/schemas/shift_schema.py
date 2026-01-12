@@ -53,13 +53,24 @@ class ShiftUpdateSchema(Schema):
         validate=validate.Range(min=1)
     )
 
-
 class ShiftPublishSchema(Schema):
     shift_ids = fields.List(
-        fields = UUID(),
+        fields.UUID(),
         required = True,
         validate = validate.Length(min=1)
     )
+
+class ShiftUpdateSchema(Schema):
+    start_time = fields.Time(required=False)
+    end_time = fields.Time(required=False)
+    capacity = fields.Integer(
+        required=False,
+        validate=validate.Range(min=1)
+    )
+
+class ShiftDelectBulkSchema(Schema):
+    ...
+
 
 
 
