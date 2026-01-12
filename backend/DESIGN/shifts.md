@@ -93,8 +93,4 @@ The following extensions can be added without breaking existing behavior:
 	3.	Time-based Capacity Variations
 	•	Capacity rules that vary by time of day.
 	4.	Shift Templates / Rule Persistence
-<<<<<<< HEAD
 	•	Persist reusable generation rules.
-=======
-	•	Persist reusable generation rules.
->>>>>>> 9344eb6 (feat(shift): add create shfit api)
