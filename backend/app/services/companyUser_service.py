@@ -9,7 +9,6 @@ class CompanyUserService:
             CompanyUser.company_id == company_id,
             CompanyUser.user_id == user_id,
             CompanyUser.deleted_at.is_(None)
-<<<<<<< HEAD
         ).first()
     
     @staticmethod
@@ -23,6 +22,3 @@ class CompanyUserService:
             raise PermissionError("Only manager allowed.")
         
         return membership
-=======
-        ).first()
->>>>>>> 4b0f1d0 (feat(shift):create_shift api)
