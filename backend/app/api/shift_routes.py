@@ -53,9 +53,20 @@ def publish_shifts(company_id):
 
 @bp.delete("/shifts/<shift_id>")
 @jwt_required
-def delect_draft_shift(shift_id):
+def delect_shift(shift_id):
     ShiftService.delete_shift(
         shift_id=shift_id,
         user_id=g.user_id
     )
     return "", 204
+
+@bp.patch("/shifts/<shift_id>")
+@jwt_required
+def update_shift(shift_id):
+    data = ShiftUpdateSchema().load(request.json or {})
+    shift = ShiftService.update_shift(
+        shift_id=shift_id,
+        user_id=g.user_id,
+        data=data
+    )
+    return ok(ShiftOutSchema().dump(shift))

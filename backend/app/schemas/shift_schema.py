@@ -47,11 +47,6 @@ class ShiftOutSchema(Schema):
     created_at = fields.DateTime(dump_only=True)
     updated_at = fields.DateTime(dump_only=True)
 
-class ShiftUpdateSchema(Schema):
-    capacity = fields.Integer(
-        required=False,
-        validate=validate.Range(min=1)
-    )
 
 class ShiftPublishSchema(Schema):
     shift_ids = fields.List(
@@ -63,14 +58,28 @@ class ShiftPublishSchema(Schema):
 class ShiftUpdateSchema(Schema):
     start_time = fields.Time(required=False)
     end_time = fields.Time(required=False)
+
     capacity = fields.Integer(
         required=False,
         validate=validate.Range(min=1)
     )
 
-class ShiftDelectBulkSchema(Schema):
-    ...
+    @validates_schema
+    def validate_time_range(self, data, **kwargs):
+        start = data.get("start_time")
+        end = data.get("end_time")
 
+        if start and end and start == end:
+            raise ValidationError(
+                "start_time and end_time cannot be the same."
+            )
+
+class ShiftBulkDeleteSchema(Schema):
+    shift_ids = fields.List(
+        fields.UUID(),
+        required=True,
+        validate=validate.Length(min=1)
+    )
 
 
 

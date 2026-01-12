@@ -199,12 +199,32 @@ class ShiftService:
         )
 
         return overlap_exists_query.scalar()
-    
+    @staticmethod
+    def update_shift(*, shift_id, user_id, data):
+        """
+        In MVP scope only draft shift can be update
+        """
+        shift = Shift.query.get_or_404(shift_id)
+        CompanyUserService.require_manager(
+            company_id=shift.company_id,
+            user_id = user_id
+        )
+        if shift.published_at is not None:
+            raise ValueError("Cannot update a published shift.")
+        
+        for field, value in data.items():
+            setattr(shift, field, value)
+
+        db.session.commit()
+        return shift
+
+
+    @staticmethod
     def delete_shift(*, shift_id, user_id):
         """
         draft shift can be hard delete
         """
-        shift = Shift.qeury.get_or_404(shift_id)
+        shift = Shift.query.get_or_404(shift_id)
         CompanyUserService.require_manager(
             company_id=shift.company_id,
             user_id = user_id
@@ -214,8 +234,7 @@ class ShiftService:
             raise ValueError("Cannot delete a published shift.")
         
         db.session.delete(shift)
-        db.commit()
-
+        db.session.commit()
 
 
 
