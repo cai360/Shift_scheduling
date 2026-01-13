@@ -8,10 +8,10 @@ class ShiftCreateRequestSchema(Schema):
     Support for multiple working periods (e.g. lunch breaks)
     will be added via a different request schema in the future.
     """
-    start_date = fields.Date(required=True)
+    start_date = fields.Date(required=True) #yyyy-mm-dd
     end_date = fields.Date(required=True)
 
-    start_time = fields.Time(required=True)
+    start_time = fields.Time(required=True) ##hh:mm
     end_time = fields.Time(required=True)
 
     interval_minutes = fields.Integer(
@@ -66,8 +66,8 @@ class ShiftUpdateSchema(Schema):
 
     @validates_schema
     def validate_time_range(self, data, **kwargs):
-        start = data.get("start_time")
-        end = data.get("end_time")
+        start = data.get("start_time") #hh:mm
+        end = data.get("end_time")#hh:mm
 
         if start and end and start == end:
             raise ValidationError(

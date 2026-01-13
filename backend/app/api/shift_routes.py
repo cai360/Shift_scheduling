@@ -7,10 +7,6 @@ from app.utils.response import ok, error
 bp = Blueprint("shifts", __name__)
 
 
-@bp.get("/ping")
-def ping():
-    return jsonify({"message": "ping shifts"})
-
 @bp.post("companies/<company_id>/shifts/bulk")
 @jwt_required
 def create_empty_shifts(company_id):
@@ -60,7 +56,7 @@ def delect_shift(shift_id):
     )
     return "", 204
 
-@bp.patch("/shifts/<shift_id>")
+@bp.patch("shifts/<shift_id>")
 @jwt_required
 def update_shift(shift_id):
     data = ShiftUpdateSchema().load(request.json or {})

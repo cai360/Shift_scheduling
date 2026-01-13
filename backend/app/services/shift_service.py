@@ -14,18 +14,10 @@ class ShiftService:
         """
         NOTE (MVP scope, to be addressed later):
 
-        1. Overlap / Duplicate Protection
-           - This method does not prevent generating shifts that overlap
-             with existing ones.
-
-        2. Idempotency
-           - Repeating the same bulk request may generate duplicate shifts.
-
-        3. Publish State Enforcement
-           - This method does not check whether shifts are already published.
-
-        4. Bulk Insert Optimization
-           - Shifts are inserted one by one via ORM.
+        1. Overlap / Duplicate Protection - This method does not prevent generating shifts that overlap with existing ones.
+        2. Idempotency- Repeating the same bulk request may generate duplicate shifts.
+        3. Publish State Enforcement - This method does not check whether shifts are already published.
+        4. Bulk Insert Optimization - Shifts are inserted one by one via ORM.
         """
         CompanyService.get_company(company_id)
 
@@ -119,7 +111,8 @@ class ShiftService:
         )
 
         return shifts
-    
+
+
     @staticmethod
     def publish_shifts(*, company_id, user_id, shift_ids):
         CompanyService.get_company(company_id)
@@ -133,23 +126,21 @@ class ShiftService:
             Shift.query.filter(
                 Shift.company_id == company_id,
                 Shift.id.in_(shift_ids),
+                Shift.published_at.is_(None),
                 Shift.deleted_at.is_(None),
-                Shift.published_at.is_(None)
             ).all()
         )
 
-        candidate_ids = [shift.id for shift in candidate_shifts]
+        candidate_ids = [s.id for s in candidate_shifts]
 
         if not candidate_ids:
-            return {"requested": len(shift_ids), "published": 0}
+            return {"requested": len(shift_ids), "eligible": 0, "published": 0}
 
         if ShiftService._has_overlap_with_published(
             company_id=company_id,
             shift_ids=candidate_ids
         ):
-            raise ValueError(
-                "Cannot publish shifts: overlap with existing published shifts."
-            )
+            raise ValueError("Cannot publish shifts: overlap with existing published shifts.")
 
         now = datetime.now(tz=UTC_TZ)
 
@@ -157,19 +148,18 @@ class ShiftService:
             Shift.query.filter(
                 Shift.company_id == company_id,
                 Shift.id.in_(candidate_ids),
-                Shift.deleted_at.is_(None),
                 Shift.published_at.is_(None),
+                Shift.deleted_at.is_(None),
             )
             .update(
                 {Shift.published_at: now},
                 synchronize_session=False
             )
         )
-
         db.session.commit()
 
-        return {"requested": len(shift_ids), "published": updated_count}
-    
+        return {"requested": len(shift_ids), "eligible": len(candidate_ids), "published": updated_count}
+        
     @staticmethod
     def _has_overlap_with_published(*, company_id, shift_ids):
         """
@@ -199,21 +189,51 @@ class ShiftService:
         )
 
         return overlap_exists_query.scalar()
+    
     @staticmethod
     def update_shift(*, shift_id, user_id, data):
         """
-        In MVP scope only draft shift can be update
+        MVP:
+        - Only draft shifts can be updated
+        - Time update recomputes start_at / end_at using BUSINESS_TZ
         """
         shift = Shift.query.get_or_404(shift_id)
+
         CompanyUserService.require_manager(
             company_id=shift.company_id,
-            user_id = user_id
+            user_id=user_id
         )
+
         if shift.published_at is not None:
             raise ValueError("Cannot update a published shift.")
-        
-        for field, value in data.items():
-            setattr(shift, field, value)
+
+        if "start_time" in data or "end_time" in data:
+            local_date = shift.start_at.astimezone(BUSINESS_TZ).date()
+
+            start_time = data.get(
+                "start_time",
+                shift.start_at.astimezone(BUSINESS_TZ).time()
+            )
+            end_time = data.get(
+                "end_time",
+                shift.end_at.astimezone(BUSINESS_TZ).time()
+            )
+
+            local_start = datetime.combine(
+                local_date, start_time, tzinfo=BUSINESS_TZ
+            )
+            local_end = datetime.combine(
+                local_date, end_time, tzinfo=BUSINESS_TZ
+            )
+
+            if end_time <= start_time:
+                local_end += timedelta(days=1)
+
+            shift.start_at = local_start.astimezone(UTC_TZ)
+            shift.end_at = local_end.astimezone(UTC_TZ)
+
+        if "capacity" in data:
+            shift.capacity = data["capacity"]
 
         db.session.commit()
         return shift
