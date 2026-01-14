@@ -136,6 +136,7 @@ class ShiftService:
         if not candidate_ids:
             return {"requested": len(shift_ids), "eligible": 0, "published": 0}
 
+        # TODO: return overlapping shift ids for better UX
         if ShiftService._has_overlap_with_published(
             company_id=company_id,
             shift_ids=candidate_ids

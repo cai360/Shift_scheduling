@@ -24,7 +24,7 @@ The module focuses on shift generation and lifecycle control, not on employee as
 - GET   /componies/{company_id}/shifts （get all shift）
 - PATCH /shifts/{shift_id} (draft only)
 - DELETE /shifts/{shift_id} (draft only)
-- POST /componies/{company_id}/shifts/publish
+- POST /componies/{company_id}/shifts/publish （manager only）
 
 API Notes
 - Bulk creation is the primary creation method.
