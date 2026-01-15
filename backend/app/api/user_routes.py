@@ -1,9 +1,9 @@
 from flask import Blueprint, request, g
 from app.utils.auth_decorators import jwt_required
 from marshmallow import ValidationError
-from app.models.user import User
 from app.extensions import db
 from app.schemas.user_schema import *
+from app.schemas.company_schema import CompanyOutSchema
 from app.services.user_service import UserService
 from app.utils.response import ok, error  
 
@@ -49,4 +49,11 @@ def update_password():
     )
 
     return ok({"message": "Password updated successfully"}, 200)
+
+# List companies where user belongs  for the current user
+@bp.get("me/companies")
+@jwt_required
+def list_user_companies():
+    companies = UserService.list_companies_for_user(g.user_id)
+    return ok(CompanyOutSchema(many=True).dump(companies))
 
