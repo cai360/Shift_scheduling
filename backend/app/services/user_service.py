@@ -1,9 +1,9 @@
 from app.models.user import User
-from sqlalchemy.exc import IntegrityError
 from app.extensions import db
 from app.models.companies_users import CompanyUser
 from app.services.auth_service import AuthService
 from datetime import datetime, timezone
+from app.models.companies import Company
 
 class UserService:
 
@@ -69,6 +69,20 @@ class UserService:
 
         db.session.commit()
         return {"message": "User's account deleted!"}
+    
+    @staticmethod
+    def list_companies_for_user(user_id):
+        companies = (
+            db.session.query(Company)
+            .join(CompanyUser, CompanyUser.company_id == Company.id)
+            .filter(
+                CompanyUser.user_id == user_id,
+                Company.deleted_at.is_(None),
+                CompanyUser.deleted_at.is_(None)
+            )
+            .all()
+        )
+        return companies
 
     #check user role (TODO in the future)
     @staticmethod
