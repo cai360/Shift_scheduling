@@ -12,12 +12,12 @@ The module focuses on shift generation and lifecycle control, not on employee as
 - Shifts are created in bulk based on generation rules defined by managers.
 
 ## Core Rules
-- A shifts belongs to exactly one company
-- Only company managers can create, updates, or deletes shifts
-- employee have read-only access
-- Shifts are soft-deleted by default.
-- Hard deletion is only allowed when a shift has not produced any assignments or related records.
-- Once a shift is published, it becomes immutable to prevent breaking downstream workflows such as assignments, leave requests, and takeovers.
+- Shifts belong to exactly one company.
+- Only company managers can create, update, or delete shifts.
+- Employees have read-only access to shifts.
+- Draft shifts can be updated or hard-deleted.
+- Published shifts are immutable.
+- Published shifts can only be canceled (not deleted) in later stages (out of MVP scope).
 
 ## APIs 
 - POST  /componies/{company_id}/shifts/bulk （manager only）
@@ -29,7 +29,9 @@ The module focuses on shift generation and lifecycle control, not on employee as
 API Notes
 - Bulk creation is the primary creation method.
 - Individual update / delete operations are restricted to draft shifts only.
-- Publishing a shift is an explicit, irreversible state transition.
+- Publishing a shift is an explicit state transition.
+- In MVP, publishing is treated as irreversible.
+- Canceling published shifts is out of MVP scope.
 
 ### Shift Creation (Bulk)
 Shifts are not created one by one by managers, manager defined a time-range and generation rule, and the system generatres individual shift records accordingly. 
@@ -56,6 +58,9 @@ Define a single continuous daily working period.
 Defines the slot length for generated shifts.
 	•	capacity
 Defines how many employees can be assigned to each shift.
+
+- The system does not prevent overlapping shifts at the draft stage.
+- Overlap validation is enforced only during publishing.
 
 ## Time Handling Rules
 	•	Shift generation is based on wall-clock time, not elapsed real time.
