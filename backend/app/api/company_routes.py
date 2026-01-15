@@ -6,6 +6,8 @@ from app.utils.auth_decorators import jwt_required
 from app.utils.response import ok, error
 from app.services.company_service import CompanyService
 
+
+
 bp = Blueprint("companies", __name__, url_prefix="/companies")
 
 @bp.post("")
@@ -23,6 +25,7 @@ def get_company(company_id):
     return ok(CompanyOutSchema().dump(company))
 
 # List companies for the current user
+#TODO: mvoe list_company_for_user to User.route then add list users in a company in company_routes 
 @bp.get("")
 @jwt_required
 def list_for_user():
@@ -52,4 +55,8 @@ def join_company(company_id):
         "user_id": str(company_user.user_id),
         "role": company_user.role
     }, 201)
+
+
+
+
 

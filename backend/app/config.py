@@ -1,5 +1,9 @@
 import os
 from dotenv import load_dotenv
+from zoneinfo import ZoneInfo
+
+BUSINESS_TZ = ZoneInfo("Asia/Taipei")
+UTC_TZ = ZoneInfo("UTC")
 
 load_dotenv()
 
