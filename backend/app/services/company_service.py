@@ -113,11 +113,9 @@ class CompanyService:
         db.session.add(company_user)
         db.session.commit()
         return company_user
+
     
-    @staticmethod
-    def get_active_membership(*, company_id, user_id):
-        return CompanyUser.query.filter(
-            CompanyUser.company_id == company_id,
-            CompanyUser.user_id == user_id,
-            CompanyUser.deleted_at.is_(None)
-        ).first()
+
+        
+        
+

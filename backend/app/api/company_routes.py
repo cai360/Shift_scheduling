@@ -2,9 +2,11 @@ from flask import Blueprint, request,g
 from app.extensions import db
 from app.models.companies import Company
 from app.schemas.company_schema import * 
+from app.schemas.companyUser_schema import CompanyUserOutSchema
 from app.utils.auth_decorators import jwt_required
 from app.utils.response import ok, error
 from app.services.company_service import CompanyService
+from app.services.companyUser_service import CompanyUserService
 
 
 
@@ -26,8 +28,7 @@ def get_company(company_id):
     company = CompanyService.get_company(company_id)
     return ok(CompanyOutSchema().dump(company))
 
-# List companies for the current user
-#TODO: mvoe list_company_for_user to User.route then add list users in a company in company_routes 
+#TODO: add list users in a company in company_routes 
 
 @bp.patch("/<company_id>")
 @jwt_required
@@ -53,6 +54,15 @@ def join_company(company_id):
         "role": company_user.role
     }, 201)
 
+@bp.get("/<company_id>/users")
+@jwt_required
+def list_company_users(company_id):
+    users =  CompanyUserService.get_members(
+        company_id=company_id,
+        user_id = g.user_id
+    )
+
+    return ok(CompanyUserOutSchema(many=True).dump(users))
 
 
 
