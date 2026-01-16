@@ -1,4 +1,5 @@
 from app.extensions import db
+from app.models import User
 from datetime import datetime
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy import text
@@ -27,6 +28,12 @@ class CompanyUser(BaseModel):
     # NULL = active membership
     deleted_at = db.Column(db.DateTime(timezone=True), nullable=True)
 
+    user = db.relationship(
+        User,
+        backref="company_memberships",
+        lazy="select"
+    )
+
     __table_args__ = (
         db.CheckConstraint( "role IN ('manager','employee')",name="ck_company_users_role"),
                 # partial unique index → one active membership per company
@@ -35,7 +42,7 @@ class CompanyUser(BaseModel):
             "company_id",
             "user_id",
             unique=True,
-            postgresql_where=text("deleted_at IS NULL")#把一段純 SQL 字串包成可被 SQLAlchemy 理解的 SQL 物件
+            postgresql_where=text("deleted_at IS NULL")
         ),
     )
 
