@@ -20,6 +20,7 @@ class Unavailability(BaseModel):
 
     start_at = db.Column(db.DateTime, nullable=False)
     end_at = db.Column(db.DateTime, nullable=False)
+    deleted_at = db.Column(db.DateTime(timezone=True), nullable=True)
 
     __table_args__ = (
         db.UniqueConstraint(
