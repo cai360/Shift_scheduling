@@ -26,8 +26,6 @@ def get_company(company_id):
     company = CompanyService.get_company(company_id)
     return ok(CompanyOutSchema().dump(company))
 
-#TODO: add list users in a company in company_routes 
-
 @bp.patch("/<company_id>")
 @jwt_required
 def update_company(company_id):
