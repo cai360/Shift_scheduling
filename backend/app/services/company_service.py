@@ -41,21 +41,6 @@ class CompanyService:
 
 
     @staticmethod
-    def list_companies_for_user(user_id):
-        companies = (
-            db.session.query(Company)
-            .join(CompanyUser, CompanyUser.company_id == Company.id)
-            .filter(
-                CompanyUser.user_id == user_id,
-                Company.deleted_at.is_(None),
-                CompanyUser.deleted_at.is_(None)
-            )
-            .all()
-        )
-        return companies
-
-
-    @staticmethod
     def update_company(company_id, data, user_id):
         company = CompanyService.get_company(company_id)
 
@@ -128,11 +113,9 @@ class CompanyService:
         db.session.add(company_user)
         db.session.commit()
         return company_user
+
     
-    @staticmethod
-    def get_active_membership(*, company_id, user_id):
-        return CompanyUser.query.filter(
-            CompanyUser.company_id == company_id,
-            CompanyUser.user_id == user_id,
-            CompanyUser.deleted_at.is_(None)
-        ).first()
+
+        
+        
+
