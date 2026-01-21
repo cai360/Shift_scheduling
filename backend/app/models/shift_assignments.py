@@ -19,6 +19,9 @@ class ShiftAssignment(BaseModel):
     assigned_by = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id', ondelete='SET NULL'),
                 nullable=True)
     
+    deleted_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    
+    # TODO: uniquer contraint need to limit only deleted_at == null, should remove this contraint into migration later 
     __table_args__ = (
         UniqueConstraint(
             'user_id',
