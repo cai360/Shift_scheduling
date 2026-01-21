@@ -42,7 +42,7 @@ def list_for_user(company_id):
         user_id=g.user_id, 
         company_id=company_id
     )
-    return ok(UnavailabilityListOutSchema(many=True).dump(unavailability))
+    return ok(UnavailabilityOutSchema(many=True).dump(unavailability))
 
 @bp.patch("/<uuid:unavailability_id>")
 @jwt_required

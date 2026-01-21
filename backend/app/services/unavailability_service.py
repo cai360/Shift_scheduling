@@ -1,4 +1,6 @@
-from app.models import User, Company, CompanyUser, Unavailability
+from app.models import Unavailability
+from app.services.companyUser_service import CompanyUserService
+from app.services.datetimeRange_service import DateTimeRangeService
 from app.extensions import db
 from datetime import datetime, timezone
 from werkzeug.exceptions import Forbidden, NotFound
@@ -8,14 +10,20 @@ class UnavailabilityService:
     @staticmethod
     def create_unavailability(data, user_id, company_id):
         try:
-            if not CompanyUser.query.filter_by(
-                user_id=user_id,
-                company_id=company_id
-            ).first():
+            membership = CompanyUserService.get_active_membership(company_id=company_id, user_id=user_id)
+            if not membership:
                 raise Forbidden("User not in this company")
 
-            if data["end_at"] <= data["start_at"]:
-                raise ValueError("end_at must be after start_at")
+            UnavailabilityService.validate_time_range(data)
+
+            if DateTimeRangeService.has_overlap(
+                Unavailability,
+                user_id=user_id,
+                company_id=company_id,
+                start_at=data["start_at"],
+                end_at=data["end_at"]
+            ):
+                raise ValueError("Time range overlaps with existing unavailability.")
             
             unavailability = Unavailability(
                 **data, 
@@ -34,30 +42,27 @@ class UnavailabilityService:
     def get_unavailability(unavailability_id, user_id, company_id):
         unavailability = Unavailability.query.filter_by(
             id=unavailability_id,
-            company_id=company_id
+            company_id=company_id,
+            deleted_at=None
         ).first()
 
         if not unavailability:
-            raise NotFound("Unavailability not found")
+            raise NotFound("Unavailability does not exists.")
 
-        if not CompanyUser.query.filter_by(
-            user_id=user_id,
-            company_id=company_id
-        ).first():
-            raise Forbidden("Not allowed")
+        membership = CompanyUserService.get_active_membership(company_id=company_id, user_id=user_id)
+        if not membership:
+            raise Forbidden("Not a company member.")
         
         return unavailability
 
     def list_unavailabilities(user_id, company_id):
-        company_user = CompanyUser.query.filter_by(
-            company_id=company_id,
-            user_id=user_id
-        ).first()
 
-        if not company_user:
-            raise Forbidden("User is not in this company")
+        membership = CompanyUserService.get_active_membership(company_id=company_id, user_id=user_id)
 
-        if company_user.role == "manager":
+        if not membership:
+            raise PermissionError("Not a company member.")
+
+        if membership.role == "manager":
             return (
                 Unavailability.query
                 .filter_by(company_id=company_id)
@@ -75,32 +80,21 @@ class UnavailabilityService:
     def update_unavailability(unavailability_id, user_id, company_id, data):
         unavailability = UnavailabilityService.get_unavailability(unavailability_id, user_id, company_id)
 
-        print(unavailability.id)
-        print(unavailability.user_id)
-        print(user_id)
-        print(unavailability.user_id == UUID(user_id))
-        print(unavailability.company_id)
-        if data["end_at"] <= data["start_at"]:
-            raise ValueError("end_at must be after start_at")
-            
-        if not unavailability:
-            raise NotFound("Unavailability not found")
-
-        company_user = (
-            CompanyUser.query
-            .filter_by(
-                user_id=user_id,
-                company_id=company_id
-            )
-            .first()
-        )
-
-        if not company_user:
-            raise Forbidden("User not in this company")
-
         if (unavailability.user_id != UUID(user_id)):
             raise Forbidden("Insufficient permissions")
 
+        UnavailabilityService.validate_time_range(data)
+
+        if DateTimeRangeService.has_overlap(
+            Unavailability,
+            user_id=user_id,
+            company_id=company_id,
+            start_at=data["start_at"],
+            end_at=data["end_at"],
+            exclude_id=unavailability.id
+        ):
+            raise ValueError("Time range overlaps with existing unavailability.")
+        
         for key, value in data.items():
             setattr(unavailability, key, value)
 
@@ -109,21 +103,8 @@ class UnavailabilityService:
     
     @staticmethod
     def delete_unavailability(unavailability_id, user_id, company_id):
-        print("company_id:", company_id)
-        print("unavailability_id:", unavailability_id) 
         unavailability = UnavailabilityService.get_unavailability(unavailability_id, user_id, company_id)
-
-        company_user = (
-            CompanyUser.query
-            .filter_by(
-                user_id=user_id,
-                company_id=company_id
-            )
-            .first()
-        )
-        if not company_user:
-            raise Forbidden("User not in this company")
-
+        
         if (unavailability.user_id != UUID(user_id)):
             raise Forbidden("Insufficient permissions")
 
