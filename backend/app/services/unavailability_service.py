@@ -14,7 +14,7 @@ class UnavailabilityService:
             if not membership:
                 raise Forbidden("User not in this company")
 
-            UnavailabilityService.validate_time_range(data)
+            DateTimeRangeService.validate_time_range(data)
 
             if DateTimeRangeService.has_overlap(
                 Unavailability,
@@ -53,7 +53,10 @@ class UnavailabilityService:
         if not membership:
             raise Forbidden("Not a company member.")
         
-        return unavailability
+        if (unavailability.user_id == UUID(user_id) or membership.role == "manager"):
+            return unavailability
+
+        raise Forbidden("Insufficient permissions")
 
     def list_unavailabilities(user_id, company_id):
 
@@ -83,7 +86,7 @@ class UnavailabilityService:
         if (unavailability.user_id != UUID(user_id)):
             raise Forbidden("Insufficient permissions")
 
-        UnavailabilityService.validate_time_range(data)
+        DateTimeRangeService.validate_time_range(data)
 
         if DateTimeRangeService.has_overlap(
             Unavailability,

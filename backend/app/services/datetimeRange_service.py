@@ -2,8 +2,8 @@ from app.extensions import db
 
 class DateTimeRangeService:
     @staticmethod
-    def validate_time_range(start_at, end_at):
-        if end_at <= start_at:
+    def validate_time_range(data):
+        if data["end_at"] <= data["start_at"]:
             raise ValueError("end_at must be after start_at.")
 
     @staticmethod
