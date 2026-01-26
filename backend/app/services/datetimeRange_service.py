@@ -2,11 +2,6 @@ from app.extensions import db
 
 class DateTimeRangeService:
     @staticmethod
-    def validate_time_range(data):
-        if data["end_at"] <= data["start_at"]:
-            raise ValueError("end_at must be after start_at.")
-
-    @staticmethod
     def has_overlap(Model, user_id, company_id, start_at, end_at, exclude_id=None):
         query = Model.query.filter(
             Model.user_id == user_id,
