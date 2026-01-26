@@ -12,9 +12,6 @@ bp = Blueprint("unavailabilities", __name__, url_prefix="/companies/<uuid:compan
 @jwt_required
 def create_unavailability(company_id):
     data = UnavailabilityCreateSchema().load(request.json or {})
-    print("JSON:", request.json)
-    print("user:", g.user_id)
-    print("company:", company_id)
 
     unavailability = UnavailabilityService.create_unavailability(
         data, 

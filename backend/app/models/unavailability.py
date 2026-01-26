@@ -18,8 +18,8 @@ class Unavailability(BaseModel):
         nullable=False
     )
 
-    start_at = db.Column(db.DateTime, nullable=False)
-    end_at = db.Column(db.DateTime, nullable=False)
+    start_at = db.Column(db.DateTime(timezone=True), nullable=False)
+    end_at = db.Column(db.DateTime(timezone=True), nullable=False)
     deleted_at = db.Column(db.DateTime(timezone=True), nullable=True)
 
     __table_args__ = (
