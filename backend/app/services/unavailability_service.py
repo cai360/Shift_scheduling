@@ -4,6 +4,7 @@ from app.services.datetimeRange_service import DateTimeRangeService
 from app.extensions import db
 from datetime import datetime, timezone
 from werkzeug.exceptions import Forbidden, NotFound
+from app.config import BUSINESS_TZ, UTC_TZ
 from uuid import UUID
 
 class UnavailabilityService:
@@ -14,19 +15,21 @@ class UnavailabilityService:
             if not membership:
                 raise Forbidden("User not in this company")
 
-            DateTimeRangeService.validate_time_range(data)
+            start_at = data["start_at"].astimezone(UTC_TZ)
+            end_at = data["end_at"].astimezone(UTC_TZ)
 
             if DateTimeRangeService.has_overlap(
                 Unavailability,
                 user_id=user_id,
                 company_id=company_id,
-                start_at=data["start_at"],
-                end_at=data["end_at"]
+                start_at=start_at,
+                end_at=end_at
             ):
                 raise ValueError("Time range overlaps with existing unavailability.")
             
             unavailability = Unavailability(
-                **data, 
+                start_at=start_at,
+                end_at=end_at,
                 user_id=user_id, 
                 company_id=company_id
             )
@@ -40,6 +43,10 @@ class UnavailabilityService:
             raise
 
     def get_unavailability(unavailability_id, user_id, company_id):
+        membership = CompanyUserService.get_active_membership(company_id=company_id, user_id=user_id)
+        if not membership:
+            raise Forbidden("Not a company member.")
+        
         unavailability = Unavailability.query.filter_by(
             id=unavailability_id,
             company_id=company_id,
@@ -48,10 +55,6 @@ class UnavailabilityService:
 
         if not unavailability:
             raise NotFound("Unavailability does not exists.")
-
-        membership = CompanyUserService.get_active_membership(company_id=company_id, user_id=user_id)
-        if not membership:
-            raise Forbidden("Not a company member.")
         
         if (unavailability.user_id == UUID(user_id) or membership.role == "manager"):
             return unavailability
@@ -86,18 +89,21 @@ class UnavailabilityService:
         if (unavailability.user_id != UUID(user_id)):
             raise Forbidden("Insufficient permissions")
 
-        DateTimeRangeService.validate_time_range(data)
+        start_at = data["start_at"].astimezone(UTC_TZ)
+        end_at = data["end_at"].astimezone(UTC_TZ)
 
         if DateTimeRangeService.has_overlap(
             Unavailability,
             user_id=user_id,
             company_id=company_id,
-            start_at=data["start_at"],
-            end_at=data["end_at"],
+            start_at=start_at,
+            end_at=end_at,
             exclude_id=unavailability.id
         ):
             raise ValueError("Time range overlaps with existing unavailability.")
         
+        unavailability.start_at = start_at
+        unavailability.end_at = end_at
         for key, value in data.items():
             setattr(unavailability, key, value)
 
