@@ -1,4 +1,4 @@
-from marshmallow import Schema, fields, validates_schema
+from marshmallow import Schema, fields, validates_schema, ValidationError
 from marshmallow.validate import Length
 
 
@@ -8,8 +8,14 @@ class UnavailabilityCreateSchema(Schema):
 
     @validates_schema
     def validate_date_range(self, data, **kwargs):
-        if data["start_at"] > data["end_at"]:
-            raise ValueError("end_at must be after start_at.")
+        start_at = data["start_at"]
+        end_at = data["end_at"]
+
+        validate_timezone_aware(start_at, "start_at")
+        validate_timezone_aware(end_at, "end_at")
+
+        if start_at > end_at:
+            raise ValidationError("end_at must be after start_at.")
 
 class UnavailabilityUpdateSchema(Schema):
     start_at = fields.DateTime(required=True)
@@ -17,8 +23,14 @@ class UnavailabilityUpdateSchema(Schema):
     
     @validates_schema
     def validate_date_range(self, data, **kwargs):
-        if data["start_at"] > data["end_at"]:
-            raise ValueError("end_at must be after start_at.")
+        start_at = data["start_at"]
+        end_at = data["end_at"]
+
+        validate_timezone_aware(start_at, "start_at")
+        validate_timezone_aware(end_at, "end_at")
+
+        if start_at > end_at:
+            raise ValidationError("end_at must be after start_at.")
 
 class UnavailabilityOutSchema(Schema):
     id = fields.UUID()
@@ -29,3 +41,9 @@ class UnavailabilityOutSchema(Schema):
     created_at = fields.DateTime(required=True)
     updated_at = fields.DateTime(required=True)
     deleted_at = fields.DateTime(required=None)
+
+def validate_timezone_aware(dt, field_name):
+    if dt.tzinfo is None or dt.tzinfo.utcoffset(dt) is None:
+        raise ValidationError(
+            f"{field_name} must be timezone-aware (include timezone info)."
+        )

@@ -101,6 +101,8 @@ class UnavailabilityService:
             exclude_id=unavailability.id
         ):
             raise ValueError("Time range overlaps with existing unavailability.")
+        data['start_at'] = start_at
+        data['end_at'] = end_at
         
         unavailability.start_at = start_at
         unavailability.end_at = end_at
