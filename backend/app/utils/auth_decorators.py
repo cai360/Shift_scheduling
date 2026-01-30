@@ -1,10 +1,8 @@
 from functools import wraps
 from flask import request, g
 from app.services.auth_service import AuthService
+from uuid import UUID
 
-from functools import wraps
-from flask import request, g
-from app.services.auth_service import AuthService
 import logging
 logger = logging.getLogger(__name__)
 
@@ -21,13 +19,13 @@ def jwt_required(fn):
 
         try:
             payload = AuthService.decode_token(token, expected_type="access")
+            sub = payload.get("sub")
+            if not sub:
+                raise ValueError("Missing sub in token")
+            g.user_id = UUID(sub)
         except Exception as e:
-            logger.warning("JWT decode failure: %s", e)
+            logger.warning("JWT missing or invalid format")
             raise PermissionError("Invalid or expired token")
-
-        g.user_id = payload.get("sub")
-        if not g.user_id:
-            raise PermissionError("Invalid token payload")
 
         return fn(*args, **kwargs)
     return wrapper
