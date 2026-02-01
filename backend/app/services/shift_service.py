@@ -91,9 +91,11 @@ class ShiftService:
         return created_shifts
     
     @staticmethod
-    def list_shifts_by_company(*, company_id, user_id):
+    def list_shifts_by_company(*, company_id, user_id, status: str| None = None): 
         """
-        For mvp, this function will return all shifts from the company whether if the shifts is published or not
+        List shifts for a company with role-based visibility.
+        - Manak kgers can see all shifts.
+        - Non-managers can only see published shifts.
         """
         CompanyService.get_company(company_id)
 
@@ -106,9 +108,12 @@ class ShiftService:
             Shift.query
                 .filter(Shift.company_id == company_id,
                         Shift.deleted_at.is_(None))
-                .order_by(Shift.start_at.asc())
-                .all()
         )
+
+        if membership.role != 'manager' or status == 'published':
+            shifts = shifts.filter(Shift.published_at.isnot(None))
+
+        shifts = shifts.order_by(Shift.start_at.asc()).all()
 
         return shifts
 

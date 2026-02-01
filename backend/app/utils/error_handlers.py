@@ -4,6 +4,7 @@ from werkzeug.exceptions import HTTPException
 from flask import jsonify
 from app.utils.response import error
 import logging
+from app.errors.assignment import AssignmentConflictError
 
 logger = logging.getLogger(__name__)
 
@@ -39,4 +40,14 @@ def register_error_handlers(app):
             message="Internal Server Error",
             status=500,
             details=str(err)
+        )
+    
+    @app.errorhandler(AssignmentConflictError)
+    def handle_assignment_conflict(err):
+        return error(
+            message="Assignment conflict",
+            status=409,
+            details={
+                "conflict_shift_ids": err.conflict_shift_ids
+            }
         )

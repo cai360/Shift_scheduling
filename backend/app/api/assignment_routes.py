@@ -1,0 +1,20 @@
+from flask import Blueprint, request, g
+from app.schemas.shift_schema import *
+from app.schemas.shiftAssignment_schema import *
+from app.utils.auth_decorators import jwt_required
+from app.utils.response import ok, error
+from app.services.shiftAssignment_service import *
+bp = Blueprint("shift_assignment", __name__)
+
+@bp.post("companies/<uuid:company_id>/assignments")
+@jwt_required
+def assignment_shifts_to_user(company_id):
+    data = AssignmentCreateSchema().load(request.json or {})
+    ShiftAssignmentService.assign_user_to_shifts(
+        company_id = company_id,
+        actor_user = g.user_id,
+        target_user = data["user_id"],
+        shift_ids = data["shift_ids"]
+    )
+
+    return ok({}, 204)

@@ -21,7 +21,11 @@ class ShiftAssignment(BaseModel):
     
     deleted_at = db.Column(db.DateTime(timezone=True), nullable=True)
     
-    # TODO: uniquer contraint need to limit only deleted_at == null, should remove this contraint into migration later 
+    # TODO:
+    # This unique constraint is temporary.
+    # It should be replaced by a partial unique index
+    # (user_id, shift_id) WHERE deleted_at IS NULL,
+    # enforced at the database level via a migration.
     __table_args__ = (
         UniqueConstraint(
             'user_id',
