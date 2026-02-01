@@ -1,8 +1,12 @@
 from flask import Blueprint, jsonify, request, g
 from app.schemas.shift_schema import *
 from app.utils.auth_decorators import jwt_required
+from app.utils.datetime_utils import parse_datetime
 from app.services.shift_service import ShiftService
 from app.utils.response import ok, error
+from dateutil.parser import isoparse
+from app.config import BUSINESS_TZ
+
 
 bp = Blueprint("shifts", __name__)
 
@@ -24,9 +28,25 @@ def create_empty_shifts(company_id):
 @bp.get("/companies/<company_id>/shifts")
 @jwt_required
 def get_shifts(company_id):
+    """
+    Query params:
+    - status: optional[str] = "published"
+    - from:   optional[ISO-8601 datetime]
+    - to:     optional[ISO-8601 datetime]
+    """
+    query = ShiftQuerySchema().load(request.args)
+    try:
+        from_ = parse_datetime(query["from_"]) if "from_" in query else None
+        to_ = parse_datetime(query["to_"]) if "to_" in query else None
+    except ValueError:
+        raise ValueError("Invalid datetime format.")
+
     shfits = ShiftService.list_shifts_by_company(
         company_id=company_id,
-        user_id=g.user_id
+        user_id=g.user_id,
+        status=query.get("status"),
+        from_=from_,
+        to_=to_
         )
     
     return ok(ShiftOutSchema(many=True).dump(shfits))

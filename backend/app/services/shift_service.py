@@ -91,12 +91,9 @@ class ShiftService:
         return created_shifts
     
     @staticmethod
-    def list_shifts_by_company(*, company_id, user_id, status: str| None = None): 
-        """
-        List shifts for a company with role-based visibility.
-        - Manak kgers can see all shifts.
-        - Non-managers can only see published shifts.
-        """
+    def list_shifts_by_company(*, company_id, user_id, status: str| None = None, from_: datetime | None = None,
+    to_: datetime | None = None,): 
+
         CompanyService.get_company(company_id)
 
         membership = CompanyUserService.get_active_membership(company_id=company_id, user_id=user_id)
@@ -112,7 +109,15 @@ class ShiftService:
 
         if membership.role != 'manager' or status == 'published':
             shifts = shifts.filter(Shift.published_at.isnot(None))
-
+        
+        if from_:
+            shifts = shifts.filter(
+                Shift.end_at > from_
+            )
+        if to_:
+            shifts = shifts.filter(
+                Shift.start_at < to_
+            )
         shifts = shifts.order_by(Shift.start_at.asc()).all()
 
         return shifts

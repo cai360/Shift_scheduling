@@ -81,6 +81,11 @@ class ShiftBulkDeleteSchema(Schema):
         validate=validate.Length(min=1)
     )
 
+class ShiftQuerySchema(Schema):
+    status = fields.Str(required=False)
+    from_ = fields.Str(data_key="from", required=False)
+    to_ = fields.Str(data_key="to", required=False)
+
 
 
 # class WorkingPeriodSchema(Schema):

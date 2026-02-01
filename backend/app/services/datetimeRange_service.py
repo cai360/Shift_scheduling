@@ -15,3 +15,4 @@ class DateTimeRangeService:
             query = query.filter(Model.id != exclude_id)
 
         return db.session.query(query.exists()).scalar()
+    
