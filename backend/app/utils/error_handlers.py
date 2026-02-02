@@ -4,7 +4,7 @@ from werkzeug.exceptions import HTTPException
 from flask import jsonify
 from app.utils.response import error
 import logging
-from app.errors.assignment import AssignmentConflictError
+from app.errors.assignment import AssignmentConflictError, AssignmentCapacityExceededError
 
 logger = logging.getLogger(__name__)
 
@@ -50,4 +50,15 @@ def register_error_handlers(app):
             details={
                 "conflict_shift_ids": err.conflict_shift_ids
             }
+        )
+    
+
+    @app.errorhandler(AssignmentCapacityExceededError)
+    def handle_assignment_capacity_exceeded(err):
+        return error(
+            message="Shift capacity exceeded",
+            status=409,
+            details={
+                "shift_ids": err.shift_ids
+            },
         )

@@ -2,7 +2,7 @@ from app.extensions import db
 from app.models import ShiftAssignment, Shift
 from app.services.company_service import CompanyService
 from app.services.companyUser_service import CompanyUserService
-from app.errors.assignment import AssignmentConflictError
+from app.errors.assignment import AssignmentConflictError, AssignmentCapacityExceededError
 
 class ShiftAssignmentService:
     @staticmethod
@@ -29,27 +29,41 @@ class ShiftAssignmentService:
         if len(shifts) != len(set(shift_ids)):
             raise ValueError("Some shifts are invalid, not published, or not in this company")
         
-        with db.session.begin():
-            conflicts = (
+        conflicts = (
+            ShiftAssignment.query.filter(
+                ShiftAssignment.user_id == target_user_id,
+                ShiftAssignment.shift_id.in_(shift_ids),
+                ShiftAssignment.deleted_at.is_(None)
+            ).all()
+        )
+
+        if conflicts:
+            conflict_shift_ids = [a.shift_id for a in conflicts]
+            raise AssignmentConflictError(conflict_shift_ids=conflict_shift_ids)
+        
+        over_capacity_shift_ids = []
+        for shift in shifts:
+            count = (
                 ShiftAssignment.query.filter(
-                    ShiftAssignment.user_id == target_user_id,
-                    ShiftAssignment.shift_id.in_(shift_ids),
+                    ShiftAssignment.shift_id==shift.id,
                     ShiftAssignment.deleted_at.is_(None)
-                ).all()
+                ).count()
+            )
+        
+        if count >= shift.capacity:
+            over_capacity_shift_ids.append(shift.id)
+
+        if over_capacity_shift_ids:
+            raise AssignmentCapacityExceededError(over_capacity_shift_ids)
+        
+        for shift in shifts:
+            assignment = ShiftAssignment(
+                user_id=target_user_id,
+                shift_id = shift.id,
+                assigned_by=actor_user_id,
             )
 
-            if conflicts:
-                conflict_shift_ids = [a.shift_id for a in conflicts]
-                raise AssignmentConflictError(conflict_shift_ids=conflict_shift_ids)
-            
-            for shift in shifts:
-                assignment = ShiftAssignment(
-                    user_id=target_user_id,
-                    shift_id = shift.id,
-                    assigned_by=actor_user_id,
-                )
-
-                db.session.add(assignment)
+            db.session.add(assignment)
 
 
 
