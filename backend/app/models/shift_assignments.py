@@ -26,12 +26,5 @@ class ShiftAssignment(BaseModel):
     # It should be replaced by a partial unique index
     # (user_id, shift_id) WHERE deleted_at IS NULL,
     # enforced at the database level via a migration.
-    __table_args__ = (
-        UniqueConstraint(
-            'user_id',
-            'shift_id',
-            name='uq_user_shift_assignments'
-        ),
-    )
 
    
