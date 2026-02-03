@@ -6,6 +6,7 @@ from app.models.companies_users import CompanyUser
 from datetime import datetime, timedelta
 from app.config import BUSINESS_TZ, UTC_TZ
 from sqlalchemy import exists, and_
+from sqlalchemy.orm import selectinload
 
 class ShiftService:
 
@@ -102,7 +103,7 @@ class ShiftService:
             raise PermissionError("Not a company member.")
         
         shifts = (
-            Shift.query
+            Shift.query.options(selectinload(Shift.assignments))
                 .filter(Shift.company_id == company_id,
                         Shift.deleted_at.is_(None))
         )

@@ -8,7 +8,3 @@ class AssignmentCreateSchema(Schema):
     def validate_unique_shift_ids(self, value, **kwargs):
         if len(value) != len(set(value)):
             raise ValidationError("shift_ids must be unique")
-        
-class AssignmentOutSchema(Schema):
-    user_id = fields.UUID()
-    assigned_by = fields.UUID()

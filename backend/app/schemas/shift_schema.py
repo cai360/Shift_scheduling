@@ -1,5 +1,6 @@
 from marshmallow import (Schema, fields, validate, validates_schema, ValidationError)
 from sqlalchemy.dialects.postgresql import UUID
+from app.schemas.shiftAssignment_schema import AssignmentOutSchema
 
 class ShiftCreateRequestSchema(Schema):
     """
@@ -43,6 +44,10 @@ class ShiftOutSchema(Schema):
 
     published_at = fields.DateTime(dump_only=True, allow_none=True)
     deleted_at = fields.DateTime(dump_only=True, allow_none=True)
+
+    assignments = fields.List(
+        fields.Nested(AssignmentOutSchema)
+    )
 
     created_at = fields.DateTime(dump_only=True)
     updated_at = fields.DateTime(dump_only=True)

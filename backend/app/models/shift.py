@@ -32,6 +32,18 @@ class Shift(BaseModel):
         db.Index('ix_shift_end_at', 'end_at'),
     )
 
+    assignments = db.relationship(
+        "ShiftAssignment",
+        back_populates="shift",
+        lazy="selectin",
+        primaryjoin=(
+            "and_("
+            "ShiftAssignment.shift_id == Shift.id, "
+            "ShiftAssignment.deleted_at.is_(None)"
+            ")"
+        ),
+    )
+
 
     @hybrid_property
     def duration_minutes(self):
