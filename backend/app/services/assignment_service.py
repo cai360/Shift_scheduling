@@ -71,7 +71,7 @@ class AssignmentService:
     def unassign_shift_to_user(*, assignment_id, 
     actor_user_id):
         # TODO:
-# Prevent unassign when shift is locked or payroll period is frozen
+        # Prevent unassign when shift is locked or payroll period is frozen
         assignment = ShiftAssignment.query.get_or_404(assignment_id)
 
         CompanyUserService.require_manager(

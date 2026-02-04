@@ -1,6 +1,6 @@
 # app/utils/error_handlers.py
 from marshmallow import ValidationError
-from werkzeug.exceptions import HTTPException
+from werkzeug.exceptions import HTTPException, NotFound
 from flask import jsonify
 from app.utils.response import error
 import logging
@@ -31,6 +31,17 @@ def register_error_handlers(app):
         return error(
             message=str(err),
             status=400
+        )
+    
+    @app.errorhandler(HTTPException)
+    def handle_http_exception(err):
+        if isinstance(err, NotFound):
+            message = "Not Found"
+        else:
+            message = err.description
+        return error(
+            message=message,
+            status=err.code
         )
 
     @app.errorhandler(Exception)
