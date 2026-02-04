@@ -19,3 +19,12 @@ def assignment_shifts_to_user(company_id):
     )
 
     return ok({}, 204)
+
+@bp.delete("/assignments/<uuid:assignment_id>")
+@jwt_required
+def unassign_shift_to_user(assignment_id):
+    AssignmentService.unassign_shift_to_user(
+        assignment_id=assignment_id, 
+        actor_user_id = g.user_id
+    )
+    return ok({}, 204)

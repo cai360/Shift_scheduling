@@ -3,6 +3,8 @@ from app.models import ShiftAssignment, Shift
 from app.services.company_service import CompanyService
 from app.services.companyUser_service import CompanyUserService
 from app.errors.assignment import AssignmentConflictError, AssignmentCapacityExceededError
+from datetime import datetime, timezone
+from app.config import UTC_TZ
 
 class AssignmentService:
     @staticmethod
@@ -63,6 +65,23 @@ class AssignmentService:
 
             db.session.add(assignment)
         print(">>> COMMITTING ASSIGNMENTS <<<")
+        db.session.commit()
+
+    @staticmethod
+    def unassign_shift_to_user(*, assignment_id, 
+    actor_user_id):
+        # TODO:
+# Prevent unassign when shift is locked or payroll period is frozen
+        assignment = ShiftAssignment.query.get_or_404(assignment_id)
+
+        CompanyUserService.require_manager(
+            company_id=assignment.shift.company_id,
+            user_id = actor_user_id,
+        )
+
+        if assignment.deleted_at is not None:
+            return # idempotent
+        assignment.deleted_at = datetime.now(tz=UTC_TZ)
         db.session.commit()
 
 

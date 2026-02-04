@@ -2,9 +2,9 @@ from app.models import Unavailability
 from app.services.companyUser_service import CompanyUserService
 from app.services.datetimeRange_service import DateTimeRangeService
 from app.extensions import db
-from datetime import datetime, timezone
+from datetime import datetime
 from werkzeug.exceptions import Forbidden, NotFound
-from app.config import BUSINESS_TZ, UTC_TZ
+from app.config import UTC_TZ
 from uuid import UUID
 
 class UnavailabilityService:
@@ -115,6 +115,6 @@ class UnavailabilityService:
         if (unavailability.user_id != UUID(user_id)):
             raise Forbidden("Insufficient permissions")
 
-        unavailability.deleted_at = datetime.now(timezone.utc)
+        unavailability.deleted_at = datetime.now(tz=UTC_TZ)
         db.session.commit()
         return True

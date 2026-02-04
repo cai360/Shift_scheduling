@@ -10,5 +10,6 @@ class AssignmentCreateSchema(Schema):
             raise ValidationError("shift_ids must be unique")
         
 class AssignmentOutSchema(Schema):
+    id = fields.UUID(required=True)
     user_id = fields.UUID()
     assigned_by = fields.UUID()
