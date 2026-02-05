@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    /* === 基本編譯設定 === */
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "jsx": "react-jsx",
+
+    /* === 環境型別 === */
+    "types": ["vite/client", "node"],
+
+    /* === 嚴格與安全 === */
+    "strict": true,
+    "useDefineForClassFields": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+
+    /* === 開發體驗 === */
+    "skipLibCheck": true,
+    "noEmit": true
+  },
+  "include": ["src", "vite.config.ts"]
+}
