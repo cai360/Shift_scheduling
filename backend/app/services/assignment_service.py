@@ -5,6 +5,7 @@ from app.services.companyUser_service import CompanyUserService
 from app.errors.assignment import AssignmentConflictError, AssignmentCapacityExceededError
 from datetime import datetime, timezone
 from app.config import UTC_TZ
+from sqlalchemy.orm import selectinload
 
 class AssignmentService:
     @staticmethod
@@ -64,24 +65,43 @@ class AssignmentService:
             )
 
             db.session.add(assignment)
-        print(">>> COMMITTING ASSIGNMENTS <<<")
         db.session.commit()
 
     @staticmethod
-    def unassign_shift_to_user(*, assignment_id, 
-    actor_user_id):
+    def unassign_shift_to_user(*, company_id, actor_user_id, assignment_ids ):
         # TODO:
         # Prevent unassign when shift is locked or payroll period is frozen
-        assignment = ShiftAssignment.query.get_or_404(assignment_id)
 
         CompanyUserService.require_manager(
-            company_id=assignment.shift.company_id,
+            company_id=company_id,
             user_id = actor_user_id,
         )
 
-        if assignment.deleted_at is not None:
-            return # idempotent
-        assignment.deleted_at = datetime.now(tz=UTC_TZ)
+        assignments = (
+            ShiftAssignment.query
+            .join(Shift)
+            .options(selectinload(ShiftAssignment.shift))
+            .filter(
+                ShiftAssignment.id.in_(assignment_ids),
+                ShiftAssignment.deleted_at.is_(None),
+                Shift.company_id == company_id
+            ).all()
+        )
+
+        if not assignments:
+            return
+        
+        if len(assignments) != len(assignment_ids):
+            raise PermissionError("Some assignments do not belong to this company")
+        
+        now = datetime.now(tz=UTC_TZ)
+
+        for assignment in assignments:
+            # TODO:
+            # if assignment.shift.is_locked or payroll_frozen:
+
+            assignment.deleted_at = now
+
         db.session.commit()
 
 

@@ -1,6 +1,6 @@
 from flask import Blueprint, request, g
 from app.schemas.shift_schema import *
-from app.schemas.shiftAssignment_schema import *
+from app.schemas.assignment_schema import *
 from app.utils.auth_decorators import jwt_required
 from app.utils.response import ok, error
 from app.services.assignment_service import *
@@ -20,11 +20,15 @@ def assignment_shifts_to_user(company_id):
 
     return ok({}, 204)
 
-@bp.delete("/assignments/<uuid:assignment_id>")
+@bp.post("/companies/<uuid:company_id>/assignments/unassign")
 @jwt_required
-def unassign_shift_to_user(assignment_id):
-    AssignmentService.unassign_shift_to_user(
-        assignment_id=assignment_id, 
-        actor_user_id = g.user_id
+def batch_unassign_shifts(company_id):
+    data = AssignmentBatchDeleteSchema().load(request.json or {})
+
+    AssignmentService.batch_unassign_shifts(
+        company_id=company_id,
+        actor_user_id=g.user_id,
+        assignment_ids=data["assignment_ids"],
     )
+
     return ok({}, 204)

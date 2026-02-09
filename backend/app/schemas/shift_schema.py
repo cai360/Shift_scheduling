@@ -1,6 +1,6 @@
 from marshmallow import (Schema, fields, validate, validates_schema, ValidationError)
 from sqlalchemy.dialects.postgresql import UUID
-from app.schemas.shiftAssignment_schema import AssignmentOutSchema
+from app.schemas.assignment_schema import AssignmentOutSchema
 
 class ShiftCreateRequestSchema(Schema):
     """
