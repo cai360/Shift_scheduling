@@ -6,6 +6,7 @@ from app.errors.assignment import AssignmentConflictError, AssignmentCapacityExc
 from datetime import datetime, timezone
 from app.config import UTC_TZ
 from sqlalchemy.orm import selectinload
+from sqlalchemy import func
 
 class AssignmentService:
     @staticmethod
@@ -30,6 +31,7 @@ class AssignmentService:
 
         if len(shifts) != len(set(shift_ids)):
             raise ValueError("Some shifts are invalid, not published, or not in this company")
+        
         conflicts = (
             ShiftAssignment.query.filter(
                 ShiftAssignment.user_id == target_user_id,
@@ -42,16 +44,21 @@ class AssignmentService:
             conflict_shift_ids = [a.shift_id for a in conflicts]
             raise AssignmentConflictError(conflict_shift_ids=conflict_shift_ids)
         
+        count = (
+            db.session.query(
+                ShiftAssignment.shift_id,
+                func.count(ShiftAssignment.id).label("count")
+            ).filter(
+                ShiftAssignment.shift_id.in_([s.id for s in shifts]),
+                ShiftAssignment.deleted_at.is_(None)
+            ).group_by(ShiftAssignment.shift_id)
+            .all()
+        )
+    
+        count_map = {shift_id: count for shift_id, count in count}
         over_capacity_shift_ids = []
         for shift in shifts:
-            count = (
-                ShiftAssignment.query.filter(
-                    ShiftAssignment.shift_id==shift.id,
-                    ShiftAssignment.deleted_at.is_(None)
-                ).count()
-            )
-        
-            if count >= shift.capacity:
+            if count_map.get(shift.id, 0) >= shift.capacity:
                 over_capacity_shift_ids.append(shift.id)
 
         if over_capacity_shift_ids:
