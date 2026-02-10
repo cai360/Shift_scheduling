@@ -25,7 +25,7 @@ def assignment_shifts_to_user(company_id):
 def batch_unassign_shifts(company_id):
     data = AssignmentBatchDeleteSchema().load(request.json or {})
 
-    AssignmentService.batch_unassign_shifts(
+    AssignmentService.unassign_shift_to_user(
         company_id=company_id,
         actor_user_id=g.user_id,
         assignment_ids=data["assignment_ids"],
