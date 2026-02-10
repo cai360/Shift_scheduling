@@ -108,7 +108,10 @@ class ShiftService:
                         Shift.deleted_at.is_(None))
         )
 
-        if membership.role != 'manager' or status == 'published':
+        if membership.role != 'manager':
+            shifts = shifts.filter(Shift.published_at.isnot(None))
+
+        if status == 'published':
             shifts = shifts.filter(Shift.published_at.isnot(None))
         
         if from_:
