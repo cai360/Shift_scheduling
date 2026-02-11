@@ -7,7 +7,6 @@ from sqlalchemy.dialects.postgresql import UUID
 class ShiftAssignment(BaseModel):
     __tablename__ = 'shift_assignments'
 
-    # FK → leave empty if user deleted
     user_id = db.Column(
         UUID(as_uuid=True),
         db.ForeignKey('users.id', ondelete='SET NULL'),
@@ -19,12 +18,11 @@ class ShiftAssignment(BaseModel):
     assigned_by = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id', ondelete='SET NULL'),
                 nullable=True)
     
-    __table_args__ = (
-        UniqueConstraint(
-            'user_id',
-            'shift_id',
-            name='uq_user_shift_assignments'
-        ),
+    deleted_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    
+    shift = db.relationship(
+        "Shift",
+        back_populates="assignments"
     )
 
    

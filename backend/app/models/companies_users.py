@@ -37,6 +37,11 @@ class CompanyUser(BaseModel):
     __table_args__ = (
         db.CheckConstraint( "role IN ('manager','employee')",name="ck_company_users_role"),
                 # partial unique index → one active membership per company
+
+        # TODO:
+        # This partial unique index should be moved to a database migration.
+        # Models should only describe schema structure (columns, FKs, basic constraints),
+        # not database-specific invariants like partial unique indexes.
         db.Index(
             "uq_company_user_active",
             "company_id",

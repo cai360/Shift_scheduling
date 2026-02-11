@@ -6,6 +6,7 @@ from app.models.companies_users import CompanyUser
 from datetime import datetime, timedelta
 from app.config import BUSINESS_TZ, UTC_TZ
 from sqlalchemy import exists, and_
+from sqlalchemy.orm import selectinload
 
 class ShiftService:
 
@@ -91,10 +92,9 @@ class ShiftService:
         return created_shifts
     
     @staticmethod
-    def list_shifts_by_company(*, company_id, user_id):
-        """
-        For mvp, this function will return all shifts from the company whether if the shifts is published or not
-        """
+    def list_shifts_by_company(*, company_id, user_id, status: str| None = None, from_: datetime | None = None,
+    to_: datetime | None = None,): 
+
         CompanyService.get_company(company_id)
 
         membership = CompanyUserService.get_active_membership(company_id=company_id, user_id=user_id)
@@ -103,12 +103,26 @@ class ShiftService:
             raise PermissionError("Not a company member.")
         
         shifts = (
-            Shift.query
+            Shift.query.options(selectinload(Shift.assignments))
                 .filter(Shift.company_id == company_id,
                         Shift.deleted_at.is_(None))
-                .order_by(Shift.start_at.asc())
-                .all()
         )
+
+        if membership.role != 'manager':
+            shifts = shifts.filter(Shift.published_at.isnot(None))
+
+        if status == 'published':
+            shifts = shifts.filter(Shift.published_at.isnot(None))
+        
+        if from_:
+            shifts = shifts.filter(
+                Shift.end_at > from_
+            )
+        if to_:
+            shifts = shifts.filter(
+                Shift.start_at < to_
+            )
+        shifts = shifts.order_by(Shift.start_at.asc()).all()
 
         return shifts
 
