@@ -7,7 +7,7 @@ import { createBrowserRouter } from 'react-router-dom'
 import PublicRoutes from './public'
 import PrivateRoutes from './private'
 
-// router 入口(統一管理)
+// router Entrance (Unified Management)
 export const router = createBrowserRouter([
     ...PublicRoutes,
     ...PrivateRoutes

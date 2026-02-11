@@ -1,4 +1,4 @@
-// 需登入
+// Login
 import HomePage from '../pages/Home'
 import AuthGuard from './guards'
 import AuthLayout from '../layouts/AuthLayout'

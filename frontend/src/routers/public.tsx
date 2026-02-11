@@ -1,4 +1,4 @@
-// 不需登入
+// NoLogin
 import LoginPage from '../pages/Login'
 import IndexPage from '../pages/Index'
 import AuthLayout from '../layouts/AuthLayout'

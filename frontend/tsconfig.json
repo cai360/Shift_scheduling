@@ -1,23 +1,23 @@
 {
   "compilerOptions": {
-    /* === 基本編譯設定 === */
+    /* === Basic compilation settings === */
     "target": "ES2022",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "moduleResolution": "Node",
     "jsx": "react-jsx",
 
-    /* === 環境型別 === */
+    /* === environment === */
     "types": ["vite/client", "node"],
 
-    /* === 嚴格與安全 === */
+    /* === Strict and safety === */
     "strict": true,
     "useDefineForClassFields": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
 
-    /* === 開發體驗 === */
+    /* === Development experience === */
     "skipLibCheck": true,
     "noEmit": true
   },

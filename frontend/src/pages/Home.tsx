@@ -12,9 +12,9 @@ const HomePage = () => {
             localStorage.removeItem('token')
             localStorage.removeItem('refresh_token')
             navigate('/')
-            console.log('登出成功')
+            console.log('Logout Success')
         } catch (err) {
-            console.error('登出失敗', err)
+            console.error('Logout Failed', err)
         } finally {
             setLoading(false)
         }

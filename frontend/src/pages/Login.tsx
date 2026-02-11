@@ -29,9 +29,9 @@ const LoginPage = () => {
             localStorage.setItem('refresh_token', refresh_token)
 
             navigate('/home')
-            console.log('登入成功', res)
+            console.log('Login Success', res)
         } catch (err) {
-            console.error('登入失敗', err)
+            console.error('Login Failed', err)
         } finally {
             setLoading(false)
         }
