@@ -48,6 +48,7 @@ src/
 ```terminal
 cd frontend
 npm install
+npm run build
 npm run dev
 ```
 The application will start in development mode using Vite.
