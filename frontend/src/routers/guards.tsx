@@ -1,4 +1,4 @@
-// 權限控制
+// Permission control
 import { Navigate } from 'react-router-dom'
 import type { JSX } from 'react'
 
