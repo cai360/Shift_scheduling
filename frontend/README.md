@@ -1,73 +1,58 @@
-# React + TypeScript + Vite
+# Frontend Application
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This repository contains the frontend application of the project.
 
-Currently, two official plugins are available:
+The system is developed following an MVP strategy,
+with core architecture and data flow defined upfront
+to support scalability and future iteration.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+---
 
-## React Compiler
+## Overview
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- React-based frontend application
+- Communicates with a Flask RESTful backend
+- Supports authentication and protected routes
+- UI built with reusable components and layouts
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Tech Stack
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- React 19
+- TypeScript
+- Vite
+- React Router v6
+- Axios
+- Ant Design (antd)
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+---
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Project Structure
+
+```text
+src/
+├── assets/        # Images / SVGs
+├── components/    # Reusable UI and layout components
+├── layouts/       # Page layout templates
+├── pages/         # Page-level components
+├── routers/       # Route definitions
+├── services/      # API abstraction layer
+├── styles/        # Global styles
+├── utils/         # Utility functions
+├── App.tsx        # Router mounting
+└── main.tsx       # Application entry
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## How to run
+```terminal
+cd frontend
+npm install
+npm run dev
 ```
+The application will start in development mode using Vite.
+
+## Architecture & Design
+Detailed frontend architecture, component responsibilities,
+UI flow, and API mapping are documented here:
+[Frontend Technical Design](https://www.notion.so/Frontend-Technical-Design-Document-2fe327f3e207803bbf8cc28f2ef51094?source=copy_link)
