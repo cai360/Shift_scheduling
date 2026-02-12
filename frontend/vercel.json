@@ -1,0 +1,11 @@
+{
+    "project": "frontend",
+    "org": "bunny1780",
+    "builds": [
+      { "src": "package.json", "use": "@vercel/static-build" }
+    ],
+    "routes": [
+      { "src": "/(.*)", "dest": "/index.html" }
+    ]
+  }
+  
