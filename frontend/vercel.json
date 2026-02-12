@@ -1,5 +1,5 @@
 {
-    "project": "frontend",
+    "project": "shift_scheduling",
     "org": "bunny1780",
     "builds": [
       { "src": "package.json", "use": "@vercel/static-build" }

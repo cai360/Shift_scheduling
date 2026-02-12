@@ -35,10 +35,10 @@ jobs:
       - name: Deploy to Vercel (Preview)
         if: github.ref != 'refs/heads/main'
         run: |
-          npx vercel --token ${{ secrets.VERCEL_TOKEN }} --confirm
+          npx vercel --token ${{ secrets.VERCEL_TOKEN }} --yes
 
       - name: Deploy to Vercel (Production)
         if: github.ref == 'refs/heads/main'
         run: |
-          npx vercel --token ${{ secrets.VERCEL_TOKEN }} --prod --confirm
+          npx vercel --token ${{ secrets.VERCEL_TOKEN }} --prod --yes
 
