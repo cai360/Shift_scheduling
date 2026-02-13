@@ -1,6 +1,6 @@
-import { Outlet } from 'react-router-dom'
-import styles from './AuthLayout.module.css'
-import Footer from '../components/layout/Footer'
+import { Outlet } from 'react-router-dom';
+import styles from './AuthLayout.module.css';
+import Footer from '../components/layout/Footer';
 
 const AuthLayout = () => {
   return (
@@ -10,7 +10,7 @@ const AuthLayout = () => {
       </main>
       <Footer />
     </div>
-  )
-}
+  );
+};
 
-export default AuthLayout
+export default AuthLayout;

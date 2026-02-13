@@ -5,8 +5,6 @@ import { useNavigate } from 'react-router-dom';
 const HomePage = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const a = 1;
-  console.log(a);
 
   const handleLogout = () => {
     try {
