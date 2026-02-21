@@ -1,4 +1,4 @@
-from flask import jsonify
+from flask import jsonify, make_response
 
 SUCCESS = 0
 NO_AUTHORITY = -2
@@ -8,11 +8,21 @@ NOT_FOUND = 404
 INTERNAL_SERVER_ERROR = 500
 
 def ok(data=None, status=200):
-    return jsonify({"data": data}), status
+    resp = make_response({
+        "success": True,
+        "data": data
+    }), status
+    return resp
+    # return jsonify({"data": data}), status
 
 
 def error(message, status=400, details=None):
-    err = {"message": message}
+    err = {
+        "success": False,
+        "message": message
+    }
     if details:
         err["details"] = details
-    return jsonify({"error": err}), status
+    resp = make_response(jsonify(err), status)
+    return resp
+    # return jsonify({"error": err}), status
