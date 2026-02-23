@@ -19,7 +19,7 @@
   },
   "homepage": "https://github.com/cai360/Shift_scheduling#readme",
   "devDependencies": {
-    "husky": "^8.0.0",
+    "husky": "^8.0.3",
     "lint-staged": "^16.2.7"
   },
   "lint-staged": {
