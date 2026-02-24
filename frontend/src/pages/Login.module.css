@@ -1,10 +1,52 @@
-.login {
+.layout {
   display: flex;
-  width: 500px;
-  height: calc(100vh - 50.4px);
+  width: 100%;
+  max-width: 800px;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   gap: 16px;
   margin: 0 auto;
+  & h1 {
+    font-size: 64px;
+    font-weight: 700;
+  }
+  & h3 {
+    font-size: 24px;
+    font-weight: 700;
+  }
+  & a {
+    text-decoration: none;
+    color: #000;
+  }
+  & .loginBlock {
+    display: flex;
+    width: 50%;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    & .loginFooter {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      padding: 16px;
+    }
+  }
+}
+
+.login {
+  display: flex;
+  width: 500px;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin: 0 auto;
+  & img {
+      width: 200px;
+      aspect-ratio: 1/1;
+      object-fit: cover;
+      border-radius: 50%;
+  }
 }

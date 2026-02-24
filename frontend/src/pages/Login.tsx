@@ -4,15 +4,14 @@ import AppPasswordInput from '../components/ui/AppPasswordInout';
 import styles from './Login.module.css';
 import { login } from '../services/auth.api';
 import { useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const role = searchParams.get('role');
+  // const [searchParams] = useSearchParams();
 
   const handleLogin = async () => {
     try {
@@ -37,21 +36,32 @@ const LoginPage = () => {
   };
   return (
     <>
-      <div className={styles.login}>
-        <h1>{role === 'company' ? '企業' : '員工'}登入</h1>
-        <AppInput
-          placeholder="帳號"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <AppPasswordInput
-          placeholder="密碼"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        <AppButton loading={loading} onClick={handleLogin}>
-          登入
-        </AppButton>
+      <div className={styles.layout}>
+        <h1 className={styles.logo}>LOGO</h1>
+        <h3 className={styles.title}>Shift Scheduling System</h3>
+        <div className={styles.loginBlock}>
+          <AppInput
+            placeholder="帳號"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+          <AppPasswordInput
+            placeholder="密碼"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <AppButton loading={loading} onClick={handleLogin}>
+            登入
+          </AppButton>
+          <div className={styles.loginFooter}>
+            <AppButton onClick={() => navigate('/forget-password')}>
+              忘記密碼
+            </AppButton>
+            <AppButton onClick={() => navigate('/register')}>
+              註冊帳號
+            </AppButton>
+          </div>
+        </div>
       </div>
     </>
   );
