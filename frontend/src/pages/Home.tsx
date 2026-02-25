@@ -11,7 +11,7 @@ const HomePage = () => {
       setLoading(true);
       localStorage.removeItem('token');
       localStorage.removeItem('refresh_token');
-      navigate('/');
+      navigate('/login');
       console.log('Logout Success');
     } catch (err) {
       console.error('Logout Failed', err);

@@ -1,6 +1,6 @@
 import AppInput from '../components/ui/AppInput';
 import AppButton from '../components/ui/AppButton';
-import styles from './Login.module.css';
+import styles from './Register.module.css';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -27,16 +27,18 @@ const ForgetPage = () => {
   };
   return (
     <>
-      <div className={styles.login}>
+      <div className={styles.layout}>
         <h1>忘記密碼</h1>
-        <AppInput
-          placeholder="電子信箱"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <AppButton loading={loading} onClick={handleRegister}>
-          重置密碼
-        </AppButton>
+        <div className={styles.block}>
+          <AppInput
+            placeholder="電子信箱"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+          <AppButton loading={loading} onClick={handleRegister}>
+            重置密碼
+          </AppButton>
+        </div>
       </div>
     </>
   );

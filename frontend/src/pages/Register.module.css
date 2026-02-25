@@ -1,14 +1,6 @@
-.login {
-    /* display: flex;
-    width: 500px;
-    height: calc(100vh - 50.4px);
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: 16px;
-    margin: 0 auto; */
+.layout {
     display: flex;
-    width: 50%;
+    width: 100%;
     max-width: 800px;
     flex-direction: column;
     justify-content: center;
@@ -21,9 +13,17 @@
         object-fit: cover;
         border-radius: 50%;
     }
+    & .block {
+        display: flex;
+        width: 50%;
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px
+    }
 }
   
-.loginFooter {
+.footer {
     display: flex;
     justify-content: center;
     gap: 16px;

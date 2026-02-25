@@ -48,30 +48,32 @@ const RegisterPage = () => {
   };
   return (
     <>
-      <div className={styles.login}>
+      <div className={styles.layout}>
         <img src="https://picsum.photos/300/200/?random=10" />
         <h1>註冊帳號</h1>
-        <AppInput
-          placeholder="電子信箱"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <AppPasswordInput
-          placeholder="密碼"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        <AppPasswordInput
-          placeholder="確認密碼"
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-        />
+        <div className={styles.block}>
+          <AppInput
+            placeholder="電子信箱"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+          <AppPasswordInput
+            placeholder="密碼"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <AppPasswordInput
+            placeholder="確認密碼"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+          />
 
-        {error && <p className={styles.error}>{error}</p>}
+          {error && <p className={styles.error}>{error}</p>}
 
-        <AppButton loading={loading} onClick={handleRegister}>
-          註冊
-        </AppButton>
+          <AppButton loading={loading} onClick={handleRegister}>
+            註冊
+          </AppButton>
+        </div>
       </div>
     </>
   );
