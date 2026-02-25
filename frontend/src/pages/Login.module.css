@@ -44,9 +44,9 @@
   gap: 16px;
   margin: 0 auto;
   & img {
-      width: 200px;
-      aspect-ratio: 1/1;
-      object-fit: cover;
-      border-radius: 50%;
+    width: 200px;
+    aspect-ratio: 1/1;
+    object-fit: cover;
+    border-radius: 50%;
   }
 }
