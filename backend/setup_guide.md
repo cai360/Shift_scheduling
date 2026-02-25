@@ -1,17 +1,17 @@
-# 🧠 Flask + PostgreSQL Quick Setup Guide (Mac / Homebrew)
+#  Flask + PostgreSQL Quick Setup Guide (Mac / Homebrew)
 
 This guide helps you set up your Flask + PostgreSQL environment from scratch.
 
 ---
 
-## 1️⃣ Install PostgreSQL (via Homebrew)
+## Install PostgreSQL (via Homebrew)
 ```bash
 brew install postgresql
 ```
 
 ---
 
-## 2️⃣ Start PostgreSQL Service
+## Start PostgreSQL Service
 讓 PostgreSQL 在背景常駐（開機自動啟動）：
 ```bash
 brew services start postgresql
@@ -24,7 +24,7 @@ brew services list
 
 ---
 
-## 3️⃣ Create Database
+## Create Database
 進入 PostgreSQL：
 ```bash
 psql postgres
@@ -39,7 +39,7 @@ CREATE DATABASE shift_scheduling;
 
 ---
 
-## 4️⃣ Initialize Flask Migrations
+## Initialize Flask Migrations
 第一次使用 Alembic：
 ```bash
 flask db init
@@ -57,7 +57,7 @@ flask db upgrade
 
 ---
 
-## 5️⃣ Run Flask Server
+## Run Flask Server
 啟動開發伺服器：
 ```bash
 flask run
@@ -73,11 +73,11 @@ http://127.0.0.1:5050
 * Debug mode: on
 * Running on http://127.0.0.1:5050
 ```
-代表一切設定成功 🎉
+代表一切設定成功
 
 ---
 
-## ✅ Optional Commands
+## Optional Commands
 | 動作 | 指令 |
 |------|------|
 | 停止 PostgreSQL | `brew services stop postgresql` |
@@ -87,7 +87,7 @@ http://127.0.0.1:5050
 
 ---
 
-## 📄 Environment Example (`.env`)
+##Environment Example (`.env`)
 ```bash
 DATABASE_URL=postgresql+psycopg2://user:yourpassword@localhost:portnumber/databaseName
 FLASK_APP=app:create_app
@@ -98,4 +98,4 @@ FLASK_DEBUG=1
 
 ---
 
-**Now you're ready to run your Flask + PostgreSQL project 🚀**
+**Now you're ready to run your Flask + PostgreSQL project**
