@@ -1,5 +1,5 @@
 from app.extensions import db
-from sqlalchemy import UniqueConstraint, func
+from sqlalchemy import text
 from .base import BaseModel
 from sqlalchemy.dialects.postgresql import UUID
 
@@ -24,5 +24,15 @@ class ShiftAssignment(BaseModel):
         "Shift",
         back_populates="assignments"
     )
+
+    __table_args__ = (
+    db.Index(
+        "uq_shift_assignment_active",
+        "user_id",
+        "shift_id",
+        unique=True,
+        postgresql_where=text("deleted_at IS NULL")
+    ),
+)
 
    

@@ -2,6 +2,7 @@ from app.models.companies import Company
 from app.extensions import db
 from app.models.companies_users import CompanyUser
 from datetime import datetime, timezone
+from app.services.permission_services import PermissionService
 
 class CompanyService:
 
@@ -15,7 +16,7 @@ class CompanyService:
             company_user = CompanyUser(
                 company_id=company.id,
                 user_id=user_id,
-                role="manager"
+                role="owner"
             )
             db.session.add(company_user)
 
@@ -61,15 +62,16 @@ class CompanyService:
 
     @staticmethod
     def soft_delete_company(company_id, user_id):
+        '''
+        TODO: clean others related data before soft delete company
+        ex: membership, shifts, assignments.
+        '''
         company = CompanyService.get_company(company_id)
 
-        company_user = CompanyUser.query.filter_by(
-            company_id=company_id,
+        PermissionService.require_owner(
+            company_id=company_id, 
             user_id=user_id
-        ).first()
-
-        if not company_user or company_user.role != "manager":
-            raise PermissionError("Only manager can delete this company.")
+        )
 
         company.deleted_at = datetime.now(timezone.utc)
         db.session.commit()

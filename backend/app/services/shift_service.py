@@ -2,6 +2,7 @@ from app.models.shift import Shift
 from app.extensions import db
 from app.services.company_service import CompanyService
 from app.services.companyUser_service import CompanyUserService
+from app.services.permission_services import PermissionService
 from app.models.companies_users import CompanyUser
 from datetime import datetime, timedelta
 from app.config import BUSINESS_TZ, UTC_TZ
@@ -22,7 +23,7 @@ class ShiftService:
         """
         CompanyService.get_company(company_id)
 
-        CompanyUserService.require_manager(
+        PermissionService.require_can_manage_company(
             company_id=company_id, 
             user_id=user_id
         )
@@ -131,7 +132,7 @@ class ShiftService:
     def publish_shifts(*, company_id, user_id, shift_ids):
         CompanyService.get_company(company_id)
 
-        CompanyUserService.require_manager(
+        PermissionService.require_can_manage_company(
             company_id=company_id,
             user_id=user_id
         )
@@ -214,7 +215,7 @@ class ShiftService:
         """
         shift = Shift.query.get_or_404(shift_id)
 
-        CompanyUserService.require_manager(
+        PermissionService.require_can_manage_company(
             company_id=shift.company_id,
             user_id=user_id
         )
@@ -260,7 +261,7 @@ class ShiftService:
         draft shift can be hard delete
         """
         shift = Shift.query.get_or_404(shift_id)
-        CompanyUserService.require_manager(
+        PermissionService.require_can_manage_company(
             company_id=shift.company_id,
             user_id = user_id
         )
