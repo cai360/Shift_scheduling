@@ -70,9 +70,17 @@ const RegisterPage = () => {
 
           {error && <p className={styles.error}>{error}</p>}
 
-          <AppButton loading={loading} onClick={handleRegister}>
-            註冊
-          </AppButton>
+          <div className={styles.button}>
+            <AppButton
+              className={styles.back}
+              onClick={() => navigate('/login')}
+            >
+              返回
+            </AppButton>
+            <AppButton loading={loading} onClick={handleRegister}>
+              註冊
+            </AppButton>
+          </div>
         </div>
       </div>
     </>

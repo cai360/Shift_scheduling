@@ -3,11 +3,11 @@ import LoginPage from '../pages/Login';
 // import IndexPage from '../pages/Index';
 import RegisterPage from '../pages/Register';
 import ForgetPage from '../pages/Forget';
-import AuthLayout from '../layouts/AuthLayout';
+import EmptyLayout from '../layouts/EmptyLayout';
 
 const PublicRoutes = [
   {
-    element: <AuthLayout />,
+    element: <EmptyLayout />,
     children: [
       // {
       //   path: '/',

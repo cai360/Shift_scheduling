@@ -28,6 +28,7 @@ const ForgetPage = () => {
   return (
     <>
       <div className={styles.layout}>
+        <img src="https://picsum.photos/300/200/?random=10" />
         <h1>忘記密碼</h1>
         <div className={styles.block}>
           <AppInput
@@ -35,9 +36,17 @@ const ForgetPage = () => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
-          <AppButton loading={loading} onClick={handleRegister}>
-            重置密碼
-          </AppButton>
+          <div className={styles.button}>
+            <AppButton
+              className={styles.back}
+              onClick={() => navigate('/login')}
+            >
+              返回
+            </AppButton>
+            <AppButton loading={loading} onClick={handleRegister}>
+              重置密碼
+            </AppButton>
+          </div>
         </div>
       </div>
     </>
