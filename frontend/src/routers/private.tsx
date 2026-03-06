@@ -1,20 +1,22 @@
 // Login
-import HomePage from '../pages/Home'
-import AuthGuard from './guards'
-import AuthLayout from '../layouts/AuthLayout'
+import HomePage from '../pages/Home';
+import AuthGuard from './guards';
+import AuthLayout from '../layouts/AuthLayout';
 
-const PrivateRoutes = [{
-  element: <AuthLayout />,
+const PrivateRoutes = [
+  {
+    element: <AuthLayout />,
     children: [
-        {
-          path: '/home',
-          element: (
-            <AuthGuard>
-              <HomePage />
-            </AuthGuard>
-          ),
-        }
+      {
+        path: '/home',
+        element: (
+          <AuthGuard>
+            <HomePage />
+          </AuthGuard>
+        ),
+      },
     ],
-}]
+  },
+];
 
-export default PrivateRoutes
+export default PrivateRoutes;

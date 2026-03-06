@@ -1,7 +1,7 @@
-import { Input, type InputProps } from 'antd'
+import { Input, type InputProps } from 'antd';
 
 const AppInput = (props: InputProps) => {
-  return <Input {...props} />
-}
+  return <Input {...props} />;
+};
 
-export default AppInput
+export default AppInput;
