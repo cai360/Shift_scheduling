@@ -4,6 +4,7 @@ from app.extensions import db
 from app.models.companies_users import CompanyUser 
 from sqlalchemy.orm import selectinload
 from app.services.company_service import CompanyService
+from datetime import datetime, timezone
 
 
 class CompanyUserService:
@@ -70,8 +71,37 @@ class CompanyUserService:
         return company_user
     
     @staticmethod
-    def leave_company():
-        ...
+    def leave_company(company_id, user_id):
+        membership = CompanyUserService.get_active_membership(
+            company_id=company_id,
+            user_id = user_id
+        )
+        if not membership:
+            raise ValueError("User is not a company member")
+        
+        member_count = CompanyUserService.count_active_members(company_id)
+        owner_count = CompanyUserService.count_active_owners(company_id)
+
+        if membership.role != 'owner':
+            membership.deleted_at = datetime.now(timezone.utc)
+            db.session.commit()
+            return True
+
+        if member_count == 1:
+            CompanyService.soft_delete_company(
+                company_id=company_id,
+                user_id=user_id
+            )
+            return True
+        if owner_count > 1:
+            membership.deleted_at = datetime.now(timezone.utc)
+            db.session.commit()
+            return True
+        
+        raise ValueError(
+            "Ownership must be transferred before leaving the company"
+        )
+        
 
     @staticmethod
     def transfer_ownership(company_id, actor_user_id, target_user_id):
