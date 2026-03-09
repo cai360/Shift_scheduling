@@ -2,7 +2,7 @@ from flask import Blueprint, request,g
 from app.extensions import db
 from app.models.companies import Company
 from app.schemas.company_schema import * 
-from app.schemas.companyUser_schema import CompanyUserOutSchema
+from app.schemas.companyUser_schema import CompanyUserOutSchema, TransferOwnershipSchema
 from app.utils.auth_decorators import jwt_required
 from app.utils.response import ok, error
 from app.services.company_service import CompanyService
@@ -64,6 +64,31 @@ def list_company_users(company_id):
     )
 
     return ok(CompanyUserOutSchema(many=True).dump(users))
+
+@bp.post("/<uuid:company_id>/transfer-ownership")
+@jwt_required
+def transfer_ownership(company_id):
+    actor_user_id = g.user_id
+    data = TransferOwnershipSchema().load(request.json)
+
+    PermissionService.require_owner(
+        company_id=company_id,
+        user_id=actor_user_id
+    )
+
+    result = CompanyUserService.transfer_ownership(
+        company_id=company_id,
+        actor_user_id=actor_user_id,
+        target_user_id=data["target_user_id"]
+    )
+
+    return ok({
+        "user_id": str(result.user_id),
+        "company_id": str(result.company_id),
+        "role": result.role
+    })
+    
+
 
 
 
