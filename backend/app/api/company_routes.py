@@ -87,7 +87,15 @@ def transfer_ownership(company_id):
         "company_id": str(result.company_id),
         "role": result.role
     })
-    
+
+@bp.post("/<uuid:company_id>/leave")
+@jwt_required
+def leave_company(company_id):
+    CompanyUserService.leave_company(
+        company_id=company_id,
+        user_id = g.user_id
+    )
+    return ok()
 
 
 
