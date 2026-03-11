@@ -42,6 +42,8 @@ class ShiftTakeover(BaseModel):
 
     status = db.Column(db.String(32), nullable=False, default="pending")
 
+    deleted_at = db.Column(db.DateTime(timezone=True), nullable=True)
+
     __table_args__ = (
         db.CheckConstraint("status IN ('pending', 'approved', 'rejected', 'cancelled')", name="ck_shift_takeover_status"),
 
