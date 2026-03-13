@@ -33,7 +33,7 @@ class CompanyUserService:
     
     @staticmethod
     def join_company(company_id, user_id):
-        """MVP: Only creator is manager. Everyone else is member."""
+        """MVP: Only creator is owner. Everyone else is member."""
         CompanyService.get_company(company_id)
 
         # Is active membership or not
