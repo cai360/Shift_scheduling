@@ -7,6 +7,7 @@ from app.utils.auth_decorators import jwt_required
 from app.utils.response import ok, error
 from app.services.company_service import CompanyService
 from app.services.companyUser_service import CompanyUserService
+from app.services.permission_services import PermissionService
 
 
 
@@ -36,6 +37,10 @@ def update_company(company_id):
 @bp.delete("/<company_id>")
 @jwt_required
 def delete_company(company_id):
+    PermissionService.require_owner(
+        company_id=company_id,
+        user_id=g.user_id
+    )
     CompanyService.soft_delete_company(company_id, g.user_id)
     return "", 204
 
@@ -43,7 +48,7 @@ def delete_company(company_id):
 @bp.post("/<company_id>/join")
 @jwt_required
 def join_company(company_id):
-    company_user = CompanyService.join_company(company_id, g.user_id)
+    company_user = CompanyUserService.join_company(company_id, g.user_id)
     return ok({
         "company_id": str(company_user.company_id),
         "user_id": str(company_user.user_id),

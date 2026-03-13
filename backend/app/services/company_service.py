@@ -15,7 +15,7 @@ class CompanyService:
             company_user = CompanyUser(
                 company_id=company.id,
                 user_id=user_id,
-                role="manager"
+                role="owner"
             )
             db.session.add(company_user)
 
@@ -61,61 +61,17 @@ class CompanyService:
 
     @staticmethod
     def soft_delete_company(company_id, user_id):
+        '''
+        TODO: clean others related data before soft delete company
+        ex: membership, shifts, assignments.
+        '''
         company = CompanyService.get_company(company_id)
-
-        company_user = CompanyUser.query.filter_by(
-            company_id=company_id,
-            user_id=user_id
-        ).first()
-
-        if not company_user or company_user.role != "manager":
-            raise PermissionError("Only manager can delete this company.")
 
         company.deleted_at = datetime.now(timezone.utc)
         db.session.commit()
         return True
 
 
-    @staticmethod
-    def join_company(company_id, user_id):
-        """MVP: Only creator is manager. Everyone else is member."""
-        CompanyService.get_company(company_id)
-
-        # Is active membership or not
-        existing = CompanyUser.query.filter(
-            CompanyUser.company_id == company_id,
-            CompanyUser.user_id == user_id,
-            CompanyUser.deleted_at.is_(None)
-        ).first()
-
-        if existing:
-            return existing
-
-        # Previously deleted -> restore
-        soft_deleted = CompanyUser.query.filter(
-            CompanyUser.company_id == company_id,
-            CompanyUser.user_id == user_id,
-            CompanyUser.deleted_at.is_not(None)
-        ).first()
-
-        if soft_deleted:
-            soft_deleted.deleted_at = None
-            soft_deleted.role = "employee"
-            db.session.commit()
-            return soft_deleted
-
-        # First time join
-        company_user = CompanyUser(
-            company_id=company_id,
-            user_id=user_id,
-            role="employee"
-        )
-        db.session.add(company_user)
-        db.session.commit()
-        return company_user
-
-    
-
-        
+  
         
 

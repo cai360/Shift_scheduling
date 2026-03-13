@@ -2,6 +2,7 @@ from app.extensions import db
 from app.models import ShiftAssignment, Shift
 from app.services.company_service import CompanyService
 from app.services.companyUser_service import CompanyUserService
+from app.services.permission_services import PermissionService
 from app.errors.assignment import AssignmentConflictError, AssignmentCapacityExceededError
 from datetime import datetime, timezone
 from app.config import UTC_TZ
@@ -13,7 +14,7 @@ class AssignmentService:
     def assign_user_to_shifts(*, company_id, actor_user_id, target_user_id, shift_ids):
         CompanyService.get_company(company_id=company_id)
 
-        CompanyUserService.require_manager(company_id=company_id, user_id=actor_user_id)
+        PermissionService.require_can_manage_company(company_id=company_id, user_id=actor_user_id)
 
         user = CompanyUserService.get_active_membership(company_id=company_id, user_id=target_user_id)
         if not user:
@@ -79,7 +80,7 @@ class AssignmentService:
         # TODO:
         # Prevent unassign when shift is locked or payroll period is frozen
 
-        CompanyUserService.require_manager(
+        PermissionService.require_can_manage_company(
             company_id=company_id,
             user_id = actor_user_id,
         )
