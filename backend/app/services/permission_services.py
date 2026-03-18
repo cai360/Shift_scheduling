@@ -30,6 +30,3 @@ class PermissionService:
             allowed_roles=("owner",)
         )
     
-    @staticmethod
-    def required_company_member():
-        ...

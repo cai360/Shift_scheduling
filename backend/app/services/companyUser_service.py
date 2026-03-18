@@ -74,6 +74,12 @@ class CompanyUserService:
     @staticmethod
     def leave_company(company_id, user_id):
         """
+        Business rules:
+            - A company must always have exactly one active owner unless the company is deleted.
+            - Non-owner members can leave directly.
+            - The sole owner can leave only if they are the last active member, in which case the company is soft-deleted.
+            - Otherwise, the owner must transfer ownership before leaving.
+            - Before leaving, ensure all future assignments and takeovers have been resolved.
         TODO:
         Before leaving the company, ensure that all future assignments and takeovers have been resolved.
         """
@@ -85,24 +91,21 @@ class CompanyUserService:
             raise ValueError("User is not a company member")
         
         member_count = CompanyUserService.count_active_members(company_id)
-        owner_count = CompanyUserService.count_active_owners(company_id)
 
         if membership.role != 'owner':
             membership.deleted_at = datetime.now(timezone.utc)
             db.session.commit()
             return True
-
+        
+        # owner is the last member -> delete company
         if member_count == 1:
             CompanyService.soft_delete_company(
                 company_id=company_id,
                 user_id=user_id
             )
             return True
-        if owner_count > 1:
-            membership.deleted_at = datetime.now(timezone.utc)
-            db.session.commit()
-            return True
         
+        # owner cannot leave while company still has other active members
         raise ValueError(
             "Ownership must be transferred before leaving the company"
         )
@@ -128,12 +131,12 @@ class CompanyUserService:
             raise ValueError("Actor is not a company member.")
         if actor.role != "owner":
             raise PermissionError("Only owner can transfer ownership.")
-        if target.role == "owner":
-            raise ValueError("Target user is already an owner.")
 
         try:
             actor.role = "manager"
             target.role = "owner"
+            CompanyUserService.validate_single_owner(company_id)
+
             db.session.commit()
             return target
         except Exception:
@@ -157,6 +160,14 @@ class CompanyUserService:
             CompanyUser.deleted_at.is_(None)
         ).count()
         return count
+    
+    @staticmethod
+    def validate_single_owner(company_id):
+        owner_count = CompanyUserService.count_active_owners(company_id)
+        if owner_count != 1:
+            raise RuntimeError(
+            f"[Invariant Violation] company {company_id} has {owner_count} owners"
+            )
 
     
 
