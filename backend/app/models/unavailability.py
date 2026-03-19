@@ -1,6 +1,7 @@
 from app.extensions import db
 from sqlalchemy.dialects.postgresql import UUID
 from .base import BaseModel
+from sqlalchemy import text
 
 
 class Unavailability(BaseModel):
@@ -23,12 +24,14 @@ class Unavailability(BaseModel):
     deleted_at = db.Column(db.DateTime(timezone=True), nullable=True)
 
     __table_args__ = (
-        db.UniqueConstraint(
-            'company_id', 
-            'user_id', 
-            'start_at', 
+        db.Index(
+            'uq_company_user_unavailability_active',
+            'company_id',
+            'user_id',
+            'start_at',
             'end_at',
-            name='uq_company_user_unavailability'
+            unique=True,
+            postgresql_where=text('deleted_at IS NULL')
         ),
     )
 
