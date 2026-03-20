@@ -66,8 +66,18 @@ class CompanyService:
         ex: membership, shifts, assignments.
         '''
         company = CompanyService.get_company(company_id)
+        now = datetime.now(timezone.utc)
 
-        company.deleted_at = datetime.now(timezone.utc)
+        company.deleted_at = now
+        CompanyUser.query.filter(
+            CompanyUser.company_id == company_id,
+            CompanyUser.deleted_at.is_(None)
+        ).update(
+            {"deleted_at": now},
+            synchronize_session=False
+        )
+
+
         db.session.commit()
         return True
 

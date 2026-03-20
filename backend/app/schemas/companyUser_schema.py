@@ -5,3 +5,6 @@ class CompanyUserOutSchema(Schema):
     role = fields.String()
     user = fields.Nested("UserOutSchema")
     created_at = fields.DateTime(dump_only=True)
+
+class TransferOwnershipSchema(Schema):
+    target_user_id = fields.UUID(required=True)
