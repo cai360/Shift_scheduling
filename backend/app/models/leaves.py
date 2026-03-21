@@ -33,6 +33,8 @@ class Leave(BaseModel):
 
     approved_at = db.Column(db.DateTime(timezone=True), nullable=True)
     
+    deleted_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    
     __table_args__ = (
         CheckConstraint(
             "status IN ('pending', 'approved', 'rejected', 'withdrawn')",
