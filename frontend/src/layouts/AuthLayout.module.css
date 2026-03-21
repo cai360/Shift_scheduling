@@ -6,7 +6,9 @@
 
 .main {
   flex: 1;
-  display: block;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   height: calc(100vh - 50.4px);
   background: #f5f5f5;
 }
