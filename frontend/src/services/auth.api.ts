@@ -13,6 +13,7 @@ export interface LoginTokens {
 export interface LoginPayload {
   // call api format
   email: string;
+  password: string;
 }
 
 export interface RegisterPayload {
