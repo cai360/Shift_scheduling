@@ -1,13 +1,15 @@
 import styles from './Header.module.css';
+import { useNavigate } from 'react-router-dom';
 
 const Header = () => {
+  const navigate = useNavigate();
   return (
     <header>
       <div className={styles.layout}>
-        <a className={styles.logo} href="/home">
+        <div className={styles.logo} onClick={() => navigate('/home')}>
           排班管理系統
-        </a>
-        <div className={styles.img}>
+        </div>
+        <div className={styles.profile}>
           <img src="https://picsum.photos/300/200/?random=10" />
         </div>
       </div>

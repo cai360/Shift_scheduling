@@ -39,7 +39,7 @@
         transform: scale(1.2) translateX(-50%);
       }
     }
-    
+
     .fadeOut {
       opacity: 0;
       transform: scale(0);
