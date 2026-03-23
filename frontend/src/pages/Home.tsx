@@ -1,3 +1,4 @@
+import { message } from 'antd';
 import AppButton from '../components/ui/AppButton';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -12,8 +13,9 @@ const HomePage = () => {
       localStorage.removeItem('token');
       localStorage.removeItem('refresh_token');
       navigate('/login');
-      console.log('Logout Success');
+      message.success(`登出成功`);
     } catch (err) {
+      message.error(`登出失敗`);
       console.error('Logout Failed', err);
     } finally {
       setLoading(false);
@@ -23,6 +25,9 @@ const HomePage = () => {
   return (
     <div>
       <h1>Home Page</h1>
+      <AppButton loading={loading} onClick={() => navigate('/new-company')}>
+        新公司
+      </AppButton>
       <AppButton loading={loading} onClick={handleLogout}>
         登出
       </AppButton>

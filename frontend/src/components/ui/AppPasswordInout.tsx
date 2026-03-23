@@ -5,7 +5,3 @@ const AppPasswordInput = (props: InputProps) => {
 };
 
 export default AppPasswordInput;
-
-// export const AppConfirmPasswordInput = (props: InputProps) => {
-//   return <Input.Password {...props} />;
-// };

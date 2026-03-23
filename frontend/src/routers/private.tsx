@@ -2,6 +2,7 @@
 import HomePage from '../pages/Home';
 import AuthGuard from './guards';
 import AuthLayout from '../layouts/AuthLayout';
+import NewCompanyPage from '../pages/NewCompany';
 
 const PrivateRoutes = [
   {
@@ -12,6 +13,14 @@ const PrivateRoutes = [
         element: (
           <AuthGuard>
             <HomePage />
+          </AuthGuard>
+        ),
+      },
+      {
+        path: '/new-company',
+        element: (
+          <AuthGuard>
+            <NewCompanyPage />
           </AuthGuard>
         ),
       },

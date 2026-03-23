@@ -1,0 +1,23 @@
+.primary {
+  background: #4f46e5;
+  border: none;
+  color: white;
+}
+
+.secondary {
+  background: #f3f4f6;
+  color: #111;
+  border: 1px solid #ddd;
+}
+
+.danger {
+  background: #ef4444;
+  color: white;
+  border: none;
+}
+
+.ghost {
+  background: transparent;
+  color: #4f46e5;
+  border: none;
+}
