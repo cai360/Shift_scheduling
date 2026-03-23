@@ -1,3 +1,4 @@
+import { message } from 'antd';
 import AppInput from '../components/ui/AppInput';
 import AppButton from '../components/ui/AppButton';
 import AppPasswordInput from '../components/ui/AppPasswordInout';
@@ -11,7 +12,6 @@ const LoginPage = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  // const [searchParams] = useSearchParams();
 
   const handleLogin = async () => {
     try {
@@ -27,8 +27,10 @@ const LoginPage = () => {
       localStorage.setItem('refresh_token', refresh_token);
 
       navigate('/home');
+      message.success(`登入成功`);
       console.log('Login Success', res);
     } catch (err) {
+      message.error(`登入失敗 ${err}`);
       console.error('Login Failed', err);
     } finally {
       setLoading(false);

@@ -1,3 +1,4 @@
+import { message } from 'antd';
 import AppInput from '../components/ui/AppInput';
 import AppButton from '../components/ui/AppButton';
 import AppPasswordInput from '../components/ui/AppPasswordInout';
@@ -38,8 +39,10 @@ const RegisterPage = () => {
       });
 
       navigate('/login');
+      message.success(`註冊成功`);
       console.log('Register Success', res);
     } catch (err) {
+      message.error(`註冊失敗 ${err}`);
       console.error('Register Failed', err);
       setError('註冊失敗: ' + err);
     } finally {
