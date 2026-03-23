@@ -5,13 +5,14 @@ import AppInput from '../components/ui/AppInput';
 // import AppPasswordInput from '../components/ui/AppPasswordInout';
 import AppButton from '../components/ui/AppButton';
 import { useNavigate } from 'react-router-dom';
-import { createCompany } from '../services/auth.api';
+import { createCompany, joinCompany } from '../services/auth.api';
 
 type Mode = 'create' | 'join' | null;
 
 const NewCompanyPage = () => {
   const [mode, setMode] = useState<Mode>(null);
   const [name, setName] = useState('');
+  const [companyId, setCompanyId] = useState('');
   const [description, setDescription] = useState('');
   // const [email, setEmail] = useState('');
   // const [password, setPassword] = useState('');
@@ -36,7 +37,7 @@ const NewCompanyPage = () => {
       setTimeout(() => navigate('/home'), 1000);
     } catch (err) {
       message.error(`公司建立失敗 ${err}`);
-      console.error('Login Failed', err);
+      console.error('Create Failed', err);
     } finally {
       setLoading(false);
     }
@@ -46,16 +47,13 @@ const NewCompanyPage = () => {
     try {
       setLoading(true);
 
-      const res = await createCompany({
-        name,
-        description: '',
-      });
+      const res = await joinCompany({ id: companyId });
 
-      message.success(`加入公司成功：${res.data.name}`);
+      message.success(`加入公司成功：${res.data.company_id}`);
       setTimeout(() => navigate('/home'), 1000);
     } catch (err) {
-      message.error(`公司建立失敗 ${err}`);
-      console.error('Login Failed', err);
+      message.error(`加入公司失敗 ${err}`);
+      console.error('Join Failed', err);
     } finally {
       setLoading(false);
     }
@@ -127,9 +125,9 @@ const NewCompanyPage = () => {
         {mode === 'join' && (
           <>
             <AppInput
-              placeholder="公司名稱"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              placeholder="公司ID"
+              value={companyId}
+              onChange={(e) => setCompanyId(e.target.value)}
             />
             <div className={styles.button}>
               <AppButton
