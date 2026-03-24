@@ -1,6 +1,11 @@
 from app.models.companies import Company
 from app.extensions import db
 from app.models.companies_users import CompanyUser
+from app.models.shift import Shift
+from app.models.shift_assignments import ShiftAssignment
+from app.models.shift_takeovers import ShiftTakeover
+from app.models.leaves import Leave
+from app.models.unavailability import Unavailability
 from datetime import datetime, timezone
 
 class CompanyService:
@@ -61,26 +66,80 @@ class CompanyService:
 
     @staticmethod
     def soft_delete_company(company_id, user_id):
-        '''
-        TODO: clean others related data before soft delete company
-        ex: membership, shifts, assignments.
-        '''
+        """
+        In the MVP stage, company deletion is treated as tenant deactivation.
+
+        All related business data are soft deleted.
+        Unavailability records are hard deleted.
+        """
         company = CompanyService.get_company(company_id)
         now = datetime.now(timezone.utc)
 
-        company.deleted_at = now
-        CompanyUser.query.filter(
-            CompanyUser.company_id == company_id,
-            CompanyUser.deleted_at.is_(None)
-        ).update(
-            {"deleted_at": now},
-            synchronize_session=False
-        )
+        try:
+            company.deleted_at = now
+            CompanyUser.query.filter(
+                CompanyUser.company_id == company_id,
+                CompanyUser.deleted_at.is_(None)
+            ).update(
+                {"deleted_at": now},
+                synchronize_session=False
+            )
 
+            Shift.query.filter(
+                Shift.company_id == company_id,
+                Shift.deleted_at.is_(None)
+            ).update(
+                {"deleted_at": now},
+                synchronize_session=False
+            )
 
-        db.session.commit()
-        return True
+            ShiftAssignment.query.filter(
+                ShiftAssignment.shift_id.in_(
+                    db.session.query(Shift.id).filter(
+                        Shift.company_id == company_id
+                    )
+                ),
+                ShiftAssignment.deleted_at.is_(None)
+            ).update(
+                {"deleted_at": now},
+                synchronize_session=False
+            )
 
+            ShiftTakeover.query.filter(
+                ShiftTakeover.assignment_id.in_(
+                    db.session.query(ShiftAssignment.id).filter(
+                        ShiftAssignment.shift_id.in_(
+                            db.session.query(Shift.id).filter(
+                                Shift.company_id == company_id
+                            )
+                        )
+                    )
+                ),
+                ShiftTakeover.deleted_at.is_(None)
+            ).update(
+                {"deleted_at": now},
+                synchronize_session=False
+            )
+
+            Leave.query.filter(
+                Leave.company_id == company_id,
+                Leave.deleted_at.is_(None)
+            ).update(
+                {"deleted_at": now},
+                synchronize_session=False
+            )
+
+            Unavailability.query.filter(
+                Unavailability.company_id == company_id
+            ).delete(
+                synchronize_session=False
+            )
+
+            db.session.commit()
+            return True
+        except Exception:
+            db.session.rollback()
+            raise
 
   
         
