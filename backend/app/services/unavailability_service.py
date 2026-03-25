@@ -2,6 +2,7 @@ from app.models import Unavailability
 from app.models import ShiftAssignment
 from app.models import Shift
 from app.services.companyUser_service import CompanyUserService
+from app.services.permission_services import PermissionService
 from app.services.datetimeRange_service import DateTimeRangeService
 from app.extensions import db
 from datetime import datetime
@@ -75,33 +76,34 @@ class UnavailabilityService:
         
         if unavailability.user_id == UUID(user_id):
             return unavailability
-        
-        if membership.role not in ("owner", "manager"):
-            raise Forbidden("Insufficient permissions")
+
+        PermissionService.require_can_manage_company(
+            company_id=company_id,
+            user_id=user_id
+        )
         return unavailability
     
     @staticmethod
-    def list_unavailabilities(user_id, company_id):
+    def list_unavailabilities(user_id, company_id, scope="self"):
 
         membership = CompanyUserService.get_active_membership(company_id=company_id, user_id=user_id)
 
         if not membership:
             raise Forbidden("Not a company member.")
 
-        if membership.role in ("owner", "manager"):
-            return (
-                Unavailability.query
-                .filter_by(company_id=company_id, deleted_at=None)
-                .order_by(Unavailability.start_at)
-                .all()
-            )
-
-        return (
-            Unavailability.query
-            .filter_by(company_id=company_id, user_id=user_id, deleted_at=None)
+        query = (
+            Unavailability.query.filter_by(company_id=company_id, deleted_at=None)
             .order_by(Unavailability.start_at)
-            .all()
         )
+
+        if scope == "self" :
+            return query.filter_by(user_id= user_id).all()
+        
+        if scope == "all":
+            if membership.role not in ("owner", "manager"):
+                raise Forbidden("Insufficient permissions")
+            return query.all()
+        raise ValueError("Invalid scope.")
         
     @staticmethod
     def update_unavailability(unavailability_id, user_id, company_id, data):
