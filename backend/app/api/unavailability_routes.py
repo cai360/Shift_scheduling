@@ -31,7 +31,7 @@ def get_unavailability(company_id, unavailability_id):
     )
     return ok(UnavailabilityOutSchema().dump(unavailability))
 
-# List companies for the current user
+# List unavailabilities for the current user
 @bp.get("")
 @jwt_required
 def list_for_user(company_id):
