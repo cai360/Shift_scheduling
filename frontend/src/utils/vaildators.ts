@@ -8,8 +8,24 @@ export const isPasswordMatch = ( password: string, confirmPassword: string ): bo
     return password === confirmPassword;
 };
   
+export const validateLogin = ({
+    email,
+    password,
+  }: {
+    email: string;
+    password: string;
+  }): string | null => {
+    if (!isValidEmail(email)) {
+        return 'Email 格式錯誤';
+    }
 
-export const validate = ({
+    if (!password) {
+        return '請輸入密碼';
+    }  
+    return null;
+};
+
+export const validateRegister = ({
     email,
     password,
     confirmPassword,

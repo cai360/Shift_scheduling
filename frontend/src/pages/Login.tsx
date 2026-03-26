@@ -6,6 +6,7 @@ import styles from './Login.module.css';
 import { login } from '../services/auth.api';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { validateLogin } from '../utils/validator';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -15,8 +16,11 @@ const LoginPage = () => {
 
   const handleLogin = async () => {
     try {
+
       setLoading(true);
-      console.log(email, password);
+
+    const errorMsg = validateLogin({ email, password });
+
       const res = await login({
         email,
         password,
