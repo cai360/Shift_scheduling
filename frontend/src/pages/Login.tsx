@@ -6,12 +6,13 @@ import styles from './Login.module.css';
 import { login } from '../services/auth.api';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { validateLogin } from '../utils/validators';
+import { validateLogin } from '../utils/vaildators';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   const handleLogin = async () => {
@@ -21,6 +22,7 @@ const LoginPage = () => {
       const errorMsg = validateLogin({ email, password });
       if (errorMsg) {
         setError(errorMsg);
+        message.error(errorMsg);
         return;
       }
 
@@ -70,6 +72,7 @@ const LoginPage = () => {
               註冊帳號
             </AppButton>
           </div>
+          {error && <p className={styles.error}>{error}</p>}
         </div>
       </div>
     </>

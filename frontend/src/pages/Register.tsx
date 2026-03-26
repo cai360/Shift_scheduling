@@ -6,7 +6,7 @@ import styles from './Register.module.css';
 import { register } from '../services/auth.api';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { validateRegister } from '../utils/validators';
+import { validateRegister } from '../utils/vaildators';
 
 const RegisterPage = () => {
   const [email, setEmail] = useState('');
@@ -21,6 +21,7 @@ const RegisterPage = () => {
 
     if (errorMsg) {
       setError(errorMsg);
+      message.error(errorMsg);
       return;
     }
 
