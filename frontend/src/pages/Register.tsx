@@ -15,19 +15,8 @@ const RegisterPage = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const isValidEmail = (email: string) => {
-    return /\S+@\S+\.\S+/.test(email);
-  };
-  const handleRegister = async () => {
-    // if (password !== confirmPassword) {
-    //   setError('兩次密碼不一致');
-    //   return;
-    // }
 
-    // if (!isValidEmail(email)) {
-    //   setError('Email 格式錯誤');
-    //   return;
-    // }
+  const handleRegister = async () => {
     const errorMsg = validateRegister({ email, password, confirmPassword });
 
     if (errorMsg) {

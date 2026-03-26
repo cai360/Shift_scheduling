@@ -16,10 +16,13 @@ const LoginPage = () => {
 
   const handleLogin = async () => {
     try {
-
       setLoading(true);
 
-    const errorMsg = validateLogin({ email, password });
+      const errorMsg = validateLogin({ email, password });
+      if (errorMsg) {
+        setError(errorMsg);
+        return;
+      }
 
       const res = await login({
         email,
