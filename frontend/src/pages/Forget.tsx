@@ -9,13 +9,14 @@ const ForgetPage = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleRegister = async () => {
+  const handleResetPassword = async () => {
     try {
       setLoading(true);
       //   const res = await register({
       //       email,
       //       password
       //   });
+      // TODO: connection handleResetPassword APIs
 
       navigate('/login');
       console.log('Forget-password Success');
@@ -43,7 +44,7 @@ const ForgetPage = () => {
             >
               返回
             </AppButton>
-            <AppButton loading={loading} onClick={handleRegister}>
+            <AppButton loading={loading} onClick={handleResetPassword}>
               重置密碼
             </AppButton>
           </div>

@@ -6,6 +6,7 @@ import styles from './Register.module.css';
 import { register } from '../services/auth.api';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { validator } from '../utils/validator';
 
 const RegisterPage = () => {
   const [email, setEmail] = useState('');
@@ -18,13 +19,19 @@ const RegisterPage = () => {
     return /\S+@\S+\.\S+/.test(email);
   };
   const handleRegister = async () => {
-    if (password !== confirmPassword) {
-      setError('兩次密碼不一致');
-      return;
-    }
+    // if (password !== confirmPassword) {
+    //   setError('兩次密碼不一致');
+    //   return;
+    // }
 
-    if (!isValidEmail(email)) {
-      setError('Email 格式錯誤');
+    // if (!isValidEmail(email)) {
+    //   setError('Email 格式錯誤');
+    //   return;
+    // }
+    const errorMsg = validateRegister({ email, password, confirmPassword });
+
+    if (errorMsg) {
+      setError(errorMsg);
       return;
     }
 
