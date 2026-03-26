@@ -40,7 +40,12 @@ class ShiftService:
         start_minutes = minutes_since_midnight(start_time)
         end_minutes = minutes_since_midnight(end_time)
 
-        if end_time <= start_time:
+        is_overnight = end_time <= start_time
+        if is_overnight and start_date >= end_date:
+            raise ValueError(
+                "Overnight shift generation requires end_date to be after start_date."
+            )
+        if is_overnight:
             end_minutes += 24 * 60  # overnight
 
         duration_minutes = end_minutes - start_minutes
@@ -66,6 +71,9 @@ class ShiftService:
 
             if end_time <= start_time:
                 local_end += timedelta(days=1)
+                if local_end.date() > end_date:
+                    break
+
 
             start_at_utc = local_start.astimezone(UTC_TZ)
             end_at_utc = local_end.astimezone(UTC_TZ)
@@ -89,7 +97,7 @@ class ShiftService:
             current_date += timedelta(days=1)
 
         db.session.commit()
-        return created_shifts
+        return created_shifts.sort(key=lambda s: s.start_at)
     
     @staticmethod
     def list_shifts_by_company(*, company_id, user_id, status: str| None = None, from_: datetime | None = None,
@@ -108,13 +116,15 @@ class ShiftService:
                         Shift.deleted_at.is_(None))
         )
 
-        if membership.role not in ("owner", "manager"):
-            shifts = shifts.filter(Shift.published_at.isnot(None))
+        is_manager = membership.role in ("owner", "manager")
 
-        if status == 'published':
+        if not is_manager:
             shifts = shifts.filter(Shift.published_at.isnot(None))
-        elif status == "draft":
-            shifts = shifts.filter(Shift.published_at.is_(None))
+        else:
+            if status == "published":
+                shifts = shifts.filter(Shift.published_at.isnot(None))
+            elif status == "draft":
+                shifts = shifts.filter(Shift.published_at.is_(None))
         
         if from_:
             shifts = shifts.filter(
@@ -138,20 +148,19 @@ class ShiftService:
             user_id=user_id
         )
 
-        unique_shift_ids = list(set(shift_ids))
-        if not unique_shift_ids:
-            return {"requested": 0, "eligible": 0, "published": 0}
+        if len(shift_ids) != len(set(shift_ids)):
+            raise ValueError("shift_ids must be unique")
 
         candidate_shifts = (
             Shift.query.filter(
                 Shift.company_id == company_id,
-                Shift.id.in_(unique_shift_ids),
+                Shift.id.in_(shift_ids),
                 Shift.published_at.is_(None),
                 Shift.deleted_at.is_(None),
             ).all()
         )
 
-        if len(candidate_shifts) != len(unique_shift_ids):
+        if len(candidate_shifts) != len(shift_ids):
             raise ValueError(
                 "Some shifts are invalid, deleted, already published, or not in this company."
             )
@@ -167,7 +176,7 @@ class ShiftService:
         overlap_with_published_ids = (
             ShiftService._get_overlapping_published_shifts(
                 company_id=company_id,
-                shift_ids=unique_shift_ids,
+                shift_ids=shift_ids,
             )
         )
 
@@ -181,7 +190,7 @@ class ShiftService:
         updated_count = (
             Shift.query.filter(
                 Shift.company_id == company_id,
-                Shift.id.in_(unique_shift_ids),
+                Shift.id.in_(shift_ids),
                 Shift.published_at.is_(None),
                 Shift.deleted_at.is_(None),
             )
@@ -194,7 +203,7 @@ class ShiftService:
 
         return {
             "requested": len(shift_ids),
-            "eligible": len(unique_shift_ids),
+            "eligible": len(shift_ids),
             "published": updated_count,
         }
         

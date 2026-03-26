@@ -41,7 +41,7 @@ def get_shifts(company_id):
     except ValueError:
         raise ValueError("Invalid datetime format.")
 
-    shfits = ShiftService.list_shifts_by_company(
+    shifts = ShiftService.list_shifts_by_company(
         company_id=company_id,
         user_id=g.user_id,
         status=query.get("status"),
@@ -49,7 +49,7 @@ def get_shifts(company_id):
         to_=to_
         )
     
-    return ok(ShiftOutSchema(many=True).dump(shfits))
+    return ok(ShiftOutSchema(many=True).dump(shifts))
 
 
 @bp.post("/companies/<company_id>/shifts/publish")
