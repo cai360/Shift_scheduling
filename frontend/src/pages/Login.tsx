@@ -6,7 +6,7 @@ import styles from './Login.module.css';
 import { login } from '../services/auth.api';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { validateLogin } from '../utils/validator';
+import { validateLogin } from '../utils/validators';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');

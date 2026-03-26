@@ -6,7 +6,7 @@ import styles from './Register.module.css';
 import { register } from '../services/auth.api';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { validateRegister } from '../utils/validator';
+import { validateRegister } from '../utils/validators';
 
 const RegisterPage = () => {
   const [email, setEmail] = useState('');
