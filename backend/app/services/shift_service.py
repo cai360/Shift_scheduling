@@ -16,14 +16,14 @@ class ShiftService:
         MVP behavior:
         - create draft shifts only
         - draft shifts may overlap
-        - overlap invariant is enforced at publish time
-        - repeated bulk requests are not idempotent
-        - shifts are inserted via ORM one by one
+        - exact duplicate slots (same start_at, end_at) are rejected
+        - overlap constraints are enforced at publish time
+        - bulk creation is not idempotent
         """
         CompanyService.get_company(company_id)
 
         PermissionService.require_can_manage_company(
-            company_id=company_id, 
+            company_id=company_id,
             user_id=user_id
         )
 
@@ -45,8 +45,9 @@ class ShiftService:
             raise ValueError(
                 "Overnight shift generation requires end_date to be after start_date."
             )
+
         if is_overnight:
-            end_minutes += 24 * 60  # overnight
+            end_minutes += 24 * 60
 
         duration_minutes = end_minutes - start_minutes
 
@@ -58,22 +59,25 @@ class ShiftService:
                 "Shift duration must be divisible by interval_minutes (wall-clock)"
             )
 
-        created_shifts = []
-
+        candidate_slots = []
         current_date = start_date
+
         while current_date <= end_date:
             local_start = datetime.combine(
-                current_date, start_time, tzinfo=BUSINESS_TZ
+                current_date,
+                start_time,
+                tzinfo=BUSINESS_TZ
             )
             local_end = datetime.combine(
-                current_date, end_time, tzinfo=BUSINESS_TZ
+                current_date,
+                end_time,
+                tzinfo=BUSINESS_TZ
             )
 
-            if end_time <= start_time:
+            if is_overnight:
                 local_end += timedelta(days=1)
                 if local_end.date() > end_date:
                     break
-
 
             start_at_utc = local_start.astimezone(UTC_TZ)
             end_at_utc = local_end.astimezone(UTC_TZ)
@@ -81,23 +85,52 @@ class ShiftService:
             slot_start = start_at_utc
             while slot_start < end_at_utc:
                 slot_end = slot_start + timedelta(minutes=interval_minutes)
-
-                shift = Shift(
-                    company_id=company_id,
-                    start_at=slot_start,
-                    end_at=slot_end,
-                    capacity=capacity,
-                )
-
-                db.session.add(shift)
-                created_shifts.append(shift)
-
+                candidate_slots.append((slot_start, slot_end))
                 slot_start = slot_end
 
             current_date += timedelta(days=1)
 
+        # reject duplicate slots inside the same request
+        if len(candidate_slots) != len(set(candidate_slots)):
+            raise ValueError("Duplicate shift slots detected in request.")
+
+        # reject exact duplicate active slots already in DB
+        existing_shifts = (
+            Shift.query.filter(
+                Shift.company_id == company_id,
+                Shift.deleted_at.is_(None),
+            ).all()
+        )
+
+        existing_slot_set = {
+            (shift.start_at, shift.end_at)
+            for shift in existing_shifts
+        }
+
+        duplicate_slots = [
+            (start_at, end_at)
+            for start_at, end_at in candidate_slots
+            if (start_at, end_at) in existing_slot_set
+        ]
+
+        if duplicate_slots:
+            raise ValueError("Exact duplicate shift slots already exist.")
+
+        created_shifts = []
+        for start_at, end_at in candidate_slots:
+            shift = Shift(
+                company_id=company_id,
+                start_at=start_at,
+                end_at=end_at,
+                capacity=capacity,
+            )
+            db.session.add(shift)
+            created_shifts.append(shift)
+
         db.session.commit()
-        return created_shifts.sort(key=lambda s: s.start_at)
+
+        created_shifts.sort(key=lambda s: s.start_at)
+        return created_shifts
     
     @staticmethod
     def list_shifts_by_company(*, company_id, user_id, status: str| None = None, from_: datetime | None = None,

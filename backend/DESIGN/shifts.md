@@ -73,6 +73,7 @@ request payload example
 
 ### Behavior
 - Draft shifts may overlap.
+- Exact duplicate slots (same start_at, end_at) are rejected 
 - Overlap validation is NOT enforced during creation.
 - Overlap validation is enforced at publish time only.
 ---
