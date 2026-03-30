@@ -83,9 +83,22 @@ class ShiftService:
             end_at_utc = local_end.astimezone(UTC_TZ)
 
             slot_start = start_at_utc
+            now = datetime.now(tz=UTC_TZ)
             while slot_start < end_at_utc:
                 slot_end = slot_start + timedelta(minutes=interval_minutes)
-                candidate_slots.append((slot_start, slot_end))
+                if slot_start <= now:
+                    raise ValueError("Cannot create shifts in the past")
+
+                shift = Shift(
+                    company_id=company_id,
+                    start_at=slot_start,
+                    end_at=slot_end,
+                    capacity=capacity,
+                )
+
+                db.session.add(shift)
+                created_shifts.append(shift)
+
                 slot_start = slot_end
 
             current_date += timedelta(days=1)
