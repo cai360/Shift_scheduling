@@ -44,6 +44,12 @@ class CompanyUser(BaseModel):
             unique=True,
             postgresql_where=text("deleted_at IS NULL")
         ),
+        db.Index(
+            "uq_active_owner_per_company",
+            "company_id",
+            unique=True,
+            postgresql_where=text("role = 'owner' AND deleted_at IS NULL")
+        ),
     )
 
 
