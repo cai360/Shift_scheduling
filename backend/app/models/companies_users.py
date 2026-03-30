@@ -48,7 +48,7 @@ class CompanyUser(BaseModel):
             "uq_active_owner_per_company",
             "company_id",
             unique=True,
-            postgresql_where=text("role = 'owner AND deleted_at IS NULL")
+            postgresql_where=text("role = 'owner' AND deleted_at IS NULL")
         ),
     )
 
