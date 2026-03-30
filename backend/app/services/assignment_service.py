@@ -119,8 +119,7 @@ class AssignmentService:
                 conflict_shift_ids.append(shift.id)
 
         if conflict_shift_ids:
-            raise AssignmentConflictError(conflict_shift_ids=conflict_shift_ids)
-        
+            raise AssignmentConflictError(conflict_shift_ids=conflict_shift_ids, reason="unavailability_overlap")
 
     @staticmethod
     def _validate_already_assigned(*, target_user_id, shift_ids):
