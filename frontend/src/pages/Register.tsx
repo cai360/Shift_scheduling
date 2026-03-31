@@ -1,12 +1,12 @@
 import { message } from 'antd';
 import AppInput from '../components/ui/AppInput';
 import AppButton from '../components/ui/AppButton';
-import AppPasswordInput from '../components/ui/AppPasswordInout';
+import AppPasswordInput from '../components/ui/AppPasswordInput';
 import styles from './Register.module.css';
 import { register } from '../services/auth.api';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { validateRegister } from '../utils/vaildators';
+import { validateRegister } from '../utils/validators';
 
 const RegisterPage = () => {
   const [email, setEmail] = useState('');

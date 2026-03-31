@@ -23,12 +23,12 @@ export interface RegisterPayload {
   password: string;
 }
 
-export interface createCompanyPayload {
+export interface CreateCompanyPayload {
   name: string;
   description: string;
 }
 
-export interface joinCompanyPayload {
+export interface JoinCompanyPayload {
   id: string;
 }
 
@@ -46,14 +46,14 @@ export interface RegisterResponse {
   email: string;
 }
 
-export interface createCompanyResponse {
+export interface CreateCompanyResponse {
   id: UUID;
   name: string;
   is_active: boolean;
   description: string;
 }
 
-export interface joinCompanyResponse {
+export interface JoinCompanyResponse {
   company_id: UUID;
   user_id: UUID;
   role: string;
@@ -70,12 +70,12 @@ export const register = (payload: RegisterPayload) => {
   return http.post<RegisterResponse>('/auth/register', payload);
 };
 
-export const createCompany = (payload: createCompanyPayload) => {
-  return http.post<createCompanyResponse>('/companies', payload);
+export const createCompany = (payload: CreateCompanyPayload) => {
+  return http.post<CreateCompanyResponse>('/companies', payload);
 };
 
-export const joinCompany = (payload: joinCompanyPayload) => {
-  return http.post<joinCompanyResponse>(
+export const joinCompany = (payload: JoinCompanyPayload) => {
+  return http.post<JoinCompanyResponse>(
     `/companies/${payload.id}/join`,
     payload,
   );

@@ -1,12 +1,12 @@
 import { message } from 'antd';
 import AppInput from '../components/ui/AppInput';
 import AppButton from '../components/ui/AppButton';
-import AppPasswordInput from '../components/ui/AppPasswordInout';
+import AppPasswordInput from '../components/ui/AppPasswordInput';
 import styles from './Login.module.css';
 import { login } from '../services/auth.api';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { validateLogin } from '../utils/vaildators';
+import { validateLogin } from '../utils/validators';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
