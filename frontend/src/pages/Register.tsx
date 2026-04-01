@@ -29,6 +29,7 @@ const RegisterPage = () => {
       setLoading(true);
       setError('');
 
+      // TODO: use username during register
       const res = await register({
         email,
         password,
@@ -40,7 +41,6 @@ const RegisterPage = () => {
       console.log('Register Success', res);
     } catch (err) {
       message.error(`註冊失敗 ${err}`);
-      console.error('Register Failed', err);
       setError('註冊失敗: ' + err);
     } finally {
       setLoading(false);

@@ -19,6 +19,7 @@ const LoginPage = () => {
     try {
       setLoading(true);
 
+      setError('');
       const errorMsg = validateLogin({ email, password });
       if (errorMsg) {
         setError(errorMsg);
@@ -40,7 +41,6 @@ const LoginPage = () => {
       console.log('Login Success', res);
     } catch (err) {
       message.error(`登入失敗 ${err}`);
-      console.error('Login Failed', err);
     } finally {
       setLoading(false);
     }

@@ -25,16 +25,17 @@ const NewCompanyPage = () => {
   };
 
   const create = async () => {
+    // TODO: input empty validation
     try {
       setLoading(true);
 
       const res = await createCompany({
         name,
-        description: '',
+        description,
       });
 
       message.success(`公司建立成功：${res.data.name}`);
-      setTimeout(() => navigate('/home'), 1000);
+      navigate('/home');
     } catch (err) {
       message.error(`公司建立失敗 ${err}`);
       console.error('Create Failed', err);
@@ -44,13 +45,14 @@ const NewCompanyPage = () => {
   };
 
   const join = async () => {
+    // TODO: input empty validation
     try {
       setLoading(true);
 
-      const res = await joinCompany({ id: companyId });
+      const res = await joinCompany(companyId);
 
       message.success(`加入公司成功：${res.data.company_id}`);
-      setTimeout(() => navigate('/home'), 1000);
+      navigate('/home');
     } catch (err) {
       message.error(`加入公司失敗 ${err}`);
       console.error('Join Failed', err);
@@ -62,7 +64,6 @@ const NewCompanyPage = () => {
   return (
     <div className={styles.layout} onClick={handleBackgroundClick}>
       <div className={styles.cardContainer}>
-        {/* 創建企業 */}
         <div
           className={`${styles.card} ${
             mode === 'create' ? styles.activeCard : ''
@@ -76,7 +77,6 @@ const NewCompanyPage = () => {
           <p>創建企業</p>
         </div>
 
-        {/* 加入企業 */}
         <div
           className={`${styles.card} ${
             mode === 'join' ? `${styles.activeCard} ${styles.join}` : ''
@@ -91,7 +91,6 @@ const NewCompanyPage = () => {
         </div>
       </div>
 
-      {/* 滑出 input 區塊 */}
       <div
         className={`${styles.inputSection} ${mode ? styles.showInput : ''}`}
         onClick={(e) => e.stopPropagation()}

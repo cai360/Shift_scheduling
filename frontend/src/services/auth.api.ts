@@ -28,10 +28,6 @@ export interface CreateCompanyPayload {
   description: string;
 }
 
-export interface JoinCompanyPayload {
-  id: string;
-}
-
 // mapping backend api format
 export interface LoginResponse {
   // mapping backend api format
@@ -74,9 +70,6 @@ export const createCompany = (payload: CreateCompanyPayload) => {
   return http.post<CreateCompanyResponse>('/companies', payload);
 };
 
-export const joinCompany = (payload: JoinCompanyPayload) => {
-  return http.post<JoinCompanyResponse>(
-    `/companies/${payload.id}/join`,
-    payload,
-  );
+export const joinCompany = (companyId: string) => {
+  return http.post<JoinCompanyResponse>(`/companies/${companyId}/join`);
 };
