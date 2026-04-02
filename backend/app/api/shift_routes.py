@@ -34,8 +34,8 @@ def get_shifts(company_id):
     """
     query = ShiftQuerySchema().load(request.args)
     try:
-        from_ = parse_datetime(query["from_"]) if "from_" in query else None
-        to_ = parse_datetime(query["to_"]) if "to_" in query else None
+        from_ = parse_datetime(query["from"]) if "from" in query else None
+        to_ = parse_datetime(query["to"]) if "to" in query else None
     except ValueError:
         raise ValueError("Invalid datetime format.")
 

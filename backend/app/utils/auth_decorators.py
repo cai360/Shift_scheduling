@@ -2,6 +2,7 @@ from functools import wraps
 from flask import request, g
 from app.services.auth_service import AuthService
 from uuid import UUID
+from werkzeug.exceptions import Unauthorized
 
 import logging
 logger = logging.getLogger(__name__)
@@ -13,7 +14,7 @@ def jwt_required(fn):
 
         if not auth_header.startswith("Bearer "):
             logger.warning("JWT missing or invalid format: header=%s", auth_header)
-            raise PermissionError("Missing or invalid token")
+            raise Unauthorized("Missing or invalid token")
 
         token = auth_header.split(" ", 1)[1].strip()
 
@@ -25,7 +26,7 @@ def jwt_required(fn):
             g.user_id = UUID(sub)
         except Exception as e:
             logger.warning("JWT missing or invalid format")
-            raise PermissionError("Invalid or expired token")
+            raise Unauthorized("Invalid or expired token")
 
         return fn(*args, **kwargs)
     return wrapper

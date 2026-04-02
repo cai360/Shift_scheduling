@@ -1,15 +1,14 @@
 from marshmallow import ValidationError
-from werkzeug.exceptions import HTTPException, NotFound
+from werkzeug.exceptions import HTTPException
 from app.utils.response import error
-from app.errors.assignment import (AssignmentConflictError, AssignmentCapacityExceededError,)
 import logging
-
+from app.errors.error_base import AppError
 logger = logging.getLogger(__name__)
 
 
 def register_error_handlers(app):
 
-    # =========== Validation / Permission ============
+    # =========== Validation ============
 
     @app.errorhandler(ValidationError)
     def handle_validation_error(err):
@@ -18,57 +17,34 @@ def register_error_handlers(app):
             status=400,
             details=err.messages,
         )
-
-    @app.errorhandler(PermissionError)
-    def handle_permission_error(err):
-        return error(
-            message=str(err),
-            status=403,
-        )
-
+    # can be remove if no needed 
     @app.errorhandler(ValueError)
     def handle_value_error(err):
         return error(
             message=str(err),
             status=400,
         )
-
-    # =========== Domain-specific =============
-
-    @app.errorhandler(AssignmentConflictError)
-    def handle_assignment_conflict(err):
+    
+    @app.errorhandler(AppError)
+    def handle_app_error(err):
         return error(
-            message= "Assignment conflict",
-            status=409,
-            details={
-                "conflict_shift_ids": err.conflict_shift_ids,
-                "reason": err.reason,
-            },
-        )
-
-    @app.errorhandler(AssignmentCapacityExceededError)
-    def handle_assignment_capacity_exceeded(err):
-        return error(
-            message="Shift capacity exceeded",
-            status=409,
-            details={
-                "shift_ids": err.shift_ids,
-            },
+            message=err.message,
+            status=err.status_code,
+            details=err.details,
         )
 
     # ============== HTTP errors ================
 
     @app.errorhandler(HTTPException)
     def handle_http_exception(err):
-        message = "Not Found" if isinstance(err, NotFound) else err.description
         return error(
-            message=message,
+            message=err.description,
             status=err.code,
         )
 
     @app.errorhandler(Exception)
     def handle_unexpected(err):
-        logger.exception(err)
+        logger.exception("Unhandled exception: %s", err)
         return error(
             message="Internal Server Error",
             status=500,
