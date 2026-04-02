@@ -1,10 +1,12 @@
+import { message } from 'antd';
 import AppInput from '../components/ui/AppInput';
 import AppButton from '../components/ui/AppButton';
-import AppPasswordInput from '../components/ui/AppPasswordInout';
+import AppPasswordInput from '../components/ui/AppPasswordInput';
 import styles from './Register.module.css';
 import { register } from '../services/auth.api';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { validateRegister } from '../utils/validators';
 
 const RegisterPage = () => {
   const [email, setEmail] = useState('');
@@ -13,17 +15,13 @@ const RegisterPage = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const isValidEmail = (email: string) => {
-    return /\S+@\S+\.\S+/.test(email);
-  };
-  const handleRegister = async () => {
-    if (password !== confirmPassword) {
-      setError('兩次密碼不一致');
-      return;
-    }
 
-    if (!isValidEmail(email)) {
-      setError('Email 格式錯誤');
+  const handleRegister = async () => {
+    const errorMsg = validateRegister({ email, password, confirmPassword });
+
+    if (errorMsg) {
+      setError(errorMsg);
+      message.error(errorMsg);
       return;
     }
 
@@ -31,6 +29,7 @@ const RegisterPage = () => {
       setLoading(true);
       setError('');
 
+      // TODO: use username during register
       const res = await register({
         email,
         password,
@@ -38,9 +37,10 @@ const RegisterPage = () => {
       });
 
       navigate('/login');
+      message.success(`註冊成功`);
       console.log('Register Success', res);
     } catch (err) {
-      console.error('Register Failed', err);
+      message.error(`註冊失敗 ${err}`);
       setError('註冊失敗: ' + err);
     } finally {
       setLoading(false);

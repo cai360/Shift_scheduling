@@ -23,6 +23,12 @@ export interface RegisterPayload {
   password: string;
 }
 
+export interface CreateCompanyPayload {
+  name: string;
+  description: string;
+}
+
+// mapping backend api format
 export interface LoginResponse {
   // mapping backend api format
   access_token: string;
@@ -34,7 +40,19 @@ export interface RegisterResponse {
   id: UUID;
   username: string;
   email: string;
-  password: string;
+}
+
+export interface CreateCompanyResponse {
+  id: UUID;
+  name: string;
+  is_active: boolean;
+  description: string;
+}
+
+export interface JoinCompanyResponse {
+  company_id: UUID;
+  user_id: UUID;
+  role: string;
 }
 
 // export const login = (payload: LoginPayload) => {
@@ -46,4 +64,12 @@ export const login = (payload: LoginPayload) => {
 
 export const register = (payload: RegisterPayload) => {
   return http.post<RegisterResponse>('/auth/register', payload);
+};
+
+export const createCompany = (payload: CreateCompanyPayload) => {
+  return http.post<CreateCompanyResponse>('/companies', payload);
+};
+
+export const joinCompany = (companyId: string) => {
+  return http.post<JoinCompanyResponse>(`/companies/${companyId}/join`);
 };

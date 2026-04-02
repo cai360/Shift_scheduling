@@ -1,22 +1,32 @@
+import { message } from 'antd';
 import AppInput from '../components/ui/AppInput';
 import AppButton from '../components/ui/AppButton';
-import AppPasswordInput from '../components/ui/AppPasswordInout';
+import AppPasswordInput from '../components/ui/AppPasswordInput';
 import styles from './Login.module.css';
 import { login } from '../services/auth.api';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { validateLogin } from '../utils/validators';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
-  // const [searchParams] = useSearchParams();
 
   const handleLogin = async () => {
     try {
       setLoading(true);
-      console.log(email, password);
+
+      setError('');
+      const errorMsg = validateLogin({ email, password });
+      if (errorMsg) {
+        setError(errorMsg);
+        message.error(errorMsg);
+        return;
+      }
+
       const res = await login({
         email,
         password,
@@ -27,9 +37,10 @@ const LoginPage = () => {
       localStorage.setItem('refresh_token', refresh_token);
 
       navigate('/home');
+      message.success(`登入成功`);
       console.log('Login Success', res);
     } catch (err) {
-      console.error('Login Failed', err);
+      message.error(`登入失敗 ${err}`);
     } finally {
       setLoading(false);
     }
@@ -61,6 +72,7 @@ const LoginPage = () => {
               註冊帳號
             </AppButton>
           </div>
+          {error && <p className={styles.error}>{error}</p>}
         </div>
       </div>
     </>

@@ -4,7 +4,7 @@ import styles from './AuthLayout.module.css';
 const AuthLayout = () => {
   return (
     <div className={styles.layout}>
-      <main className={styles.main}>
+      <main className={`${styles.main} ${styles.emptyMain}`}>
         <Outlet />
       </main>
     </div>
