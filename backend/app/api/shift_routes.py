@@ -1,17 +1,15 @@
-from flask import Blueprint, jsonify, request, g
+from flask import Blueprint, request, g
 from app.schemas.shift_schema import *
 from app.utils.auth_decorators import jwt_required
 from app.utils.datetime_utils import parse_datetime
 from app.services.shift_service import ShiftService
-from app.utils.response import ok, error
-from dateutil.parser import isoparse
-from app.config import BUSINESS_TZ
+from app.utils.response import ok
 
 
-bp = Blueprint("shifts", __name__)
+bp = Blueprint("shifts", __name__, url_prefix="/companies/<uuid:company_id>/shifts")
 
 
-@bp.post("companies/<company_id>/shifts/bulk")
+@bp.post("/bulk")
 @jwt_required
 def create_empty_shifts(company_id):
     payload = request.get_json() or {}
@@ -25,7 +23,7 @@ def create_empty_shifts(company_id):
 
     return ok(ShiftOutSchema(many=True).dump(shifts), 201)
 
-@bp.get("/companies/<company_id>/shifts")
+@bp.get("")
 @jwt_required
 def get_shifts(company_id):
     """
@@ -52,7 +50,7 @@ def get_shifts(company_id):
     return ok(ShiftOutSchema(many=True).dump(shifts))
 
 
-@bp.post("/companies/<company_id>/shifts/publish")
+@bp.post("/publish")
 @jwt_required
 def publish_shifts(company_id):
     payload = request.get_json(silent=True) or {}
@@ -67,20 +65,22 @@ def publish_shifts(company_id):
 
     return ok(result, 200)
 
-@bp.delete("/shifts/<shift_id>")
+@bp.delete("/<uuid:shift_id>")
 @jwt_required
-def delect_shift(shift_id):
+def delete_shift(company_id, shift_id):
     ShiftService.delete_shift(
+        company_id=company_id,
         shift_id=shift_id,
         user_id=g.user_id
     )
     return "", 204
 
-@bp.patch("shifts/<shift_id>")
+@bp.patch("/<uuid:shift_id>")
 @jwt_required
-def update_shift(shift_id):
+def update_shift(company_id, shift_id):
     data = ShiftUpdateSchema().load(request.json or {})
     shift = ShiftService.update_shift(
+        company_id=company_id,
         shift_id=shift_id,
         user_id=g.user_id,
         data=data

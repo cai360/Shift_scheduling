@@ -1,23 +1,11 @@
 from flask import Blueprint, request,g
-from app.extensions import db 
-from app.models.user import User
 from app.schemas.user_schema import UserOutSchema
 from app.schemas.auth_schema import *
 from app.services.auth_service import AuthService, RegisterError
 from app.utils.response import ok, error
 from marshmallow import ValidationError
-from app.utils.auth_decorators import jwt_required
 
 bp = Blueprint("auth", __name__, url_prefix="/auth")
-
-@bp.get("/me")
-@jwt_required
-def get_me():
-    user = User.query.get(g.user_id)
-    if not user:
-        return error("User not found", 404)
-    return ok(UserOutSchema().dump(user), 200)
-
 
 #TODO #in the controller layer shouldn't intetactive with db
 @bp.post("/register")

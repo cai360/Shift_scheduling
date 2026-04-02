@@ -2,10 +2,10 @@ from flask import Blueprint, request, g
 from app.schemas.shift_schema import *
 from app.schemas.assignment_schema import *
 from app.utils.auth_decorators import jwt_required
-from app.utils.response import ok, error
+from app.utils.response import ok
 from app.services.assignment_service import *
 
-bp = Blueprint("assignment", __name__)
+bp = Blueprint("assignments", __name__)
 
 @bp.post("/companies/<uuid:company_id>/assignments")
 @jwt_required
@@ -18,7 +18,7 @@ def assignment_shifts_to_user(company_id):
         shift_ids = data["shift_ids"]
     )
 
-    return ok({}, 204)
+    return "", 204
 
 @bp.post("/companies/<uuid:company_id>/assignments/unassign")
 @jwt_required
@@ -31,4 +31,4 @@ def batch_unassign_shifts(company_id):
         assignment_ids=data["assignment_ids"],
     )
 
-    return ok({}, 204)
+    return "", 204
