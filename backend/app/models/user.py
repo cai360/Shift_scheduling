@@ -9,4 +9,9 @@ class User(BaseModel):
     email = db.Column(db.String(64),  unique=True, nullable=False)
     deleted_at = db.Column(db.DateTime(timezone=True), nullable=True)
 
+    company_users = db.relationship(
+        "CompanyUser",
+        back_populates="user"
+    )
+
    

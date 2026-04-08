@@ -9,6 +9,12 @@ class Company(BaseModel):
     description = db.Column(db.Text, nullable=True)
     is_active = db.Column(db.Boolean, nullable= False, default=True)
     deleted_at = db.Column(db.DateTime(timezone=True), nullable=True)
+
+    company_users = db.relationship(
+        "CompanyUser",
+        back_populates="company",
+        lazy="selectin"
+    )
     
     __table_args__ = (
         db.Index(

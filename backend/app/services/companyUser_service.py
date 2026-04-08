@@ -33,6 +33,28 @@ class CompanyUserService:
         ).all()
     
     @staticmethod
+    def list_companies_for_user(user_id):
+        data = (
+            CompanyUser.query.options(selectinload(CompanyUser.company))
+            .filter(
+                CompanyUser.user_id == user_id,
+                CompanyUser.deleted_at.is_(None),
+            ).all()
+        )
+
+        result = []
+
+        for r in data:
+            if r.company and r.company.deleted_at is None:
+                result.append({
+                    "company_id": r.company.id,
+                    "company_name": r.company.name,
+                    "role": r.role,
+                })
+                
+        return result
+
+    @staticmethod
     def join_company(company_id, user_id):
         """MVP: Only creator is owner. Everyone else defult as member."""
         CompanyService.get_company(company_id)
