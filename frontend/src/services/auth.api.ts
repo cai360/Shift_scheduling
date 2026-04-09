@@ -5,11 +5,11 @@ export interface ApiResponse<T> {
   success: boolean;
   data: T;
 }
-export interface MePayload{
-    id: string;
-    username: string;
-    email: string;
-    created_at: string;
+export interface MePayload {
+  id: string;
+  username: string;
+  email: string;
+  created_at: string;
 }
 export interface LoginTokens {
   access_token: string;
@@ -67,7 +67,7 @@ export interface JoinCompanyResponse {
 
 export const getMe = () => {
   return http.get<MePayload>('/users/me');
-}
+};
 
 export const login = (payload: LoginPayload) => {
   return http.post<LoginResponse>('/auth/login', payload);

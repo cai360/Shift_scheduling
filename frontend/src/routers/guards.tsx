@@ -3,7 +3,7 @@ import { Navigate } from 'react-router-dom';
 import type { JSX } from 'react';
 
 const AuthGuard = ({ children }: { children: JSX.Element }) => {
-  const isLogin = Boolean(localStorage.getItem('token'));
+  const isLogin = Boolean(localStorage.getItem('access_token'));
 
   if (!isLogin) {
     return <Navigate to="/login" replace />;

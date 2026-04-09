@@ -1,23 +1,11 @@
-import { createContext, useContext, useEffect, useState } from 'react';
-import { useAuthContext } from './AuthContext';
+import { useEffect, useState } from 'react';
+import {
+  CompanyContext,
+  CompanyContextType,
+  MyCompany,
+} from './CompanyContext';
+import { useAuthContext } from './useAuthContext';
 import { getMyCompanies } from '../services/company.api';
-
-export type MyCompany = {
-  company_id: string;
-  company_name: string;
-  role: string;
-};
-
-type CompanyContextType = {
-  companies: MyCompany[];
-  setCompanies: (companies: MyCompany[]) => void;
-  currentCompanyId: string | null;
-  setCurrentCompanyId: (companyId: string | null) => void;
-  switchCompany: (companyId: string) => void;
-  isCompanyInitializing: boolean;
-};
-
-const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
 
 const COMPANY_STORAGE_KEY = 'currentCompanyId';
 
@@ -32,7 +20,9 @@ export const CompanyProvider = ({
   const [isCompanyInitializing, setIsCompanyInitializing] = useState(true);
 
   const switchCompany = (companyId: string) => {
-    const exists = companies.some((company) => company.company_id === companyId);
+    const exists = companies.some(
+      (company) => company.company_id === companyId,
+    );
     if (!exists) {
       return;
     }
@@ -40,12 +30,12 @@ export const CompanyProvider = ({
     localStorage.setItem(COMPANY_STORAGE_KEY, companyId);
   };
 
-  useEffect( ()=> {
+  useEffect(() => {
     if (isAuthInitializing) return;
     setIsCompanyInitializing(true);
 
     const restoreCompanies = async () => {
-      if(!user) {
+      if (!user) {
         setCompanies([]);
         setCurrentCompanyId(null);
         setIsCompanyInitializing(false);
@@ -62,19 +52,22 @@ export const CompanyProvider = ({
         const savedCompanyId = localStorage.getItem(COMPANY_STORAGE_KEY);
 
         const matchedCompany = nextCompanies.find(
-          (company:MyCompany) => company.company_id === savedCompanyId
+          (company: MyCompany) => company.company_id === savedCompanyId,
         );
 
         if (matchedCompany) {
           setCurrentCompanyId(matchedCompany.company_id);
-        }else if (nextCompanies.length > 0){
+        } else if (nextCompanies.length > 0) {
           setCurrentCompanyId(nextCompanies[0].company_id);
-          localStorage.setItem(COMPANY_STORAGE_KEY, nextCompanies[0].company_id);
-        }else {
+          localStorage.setItem(
+            COMPANY_STORAGE_KEY,
+            nextCompanies[0].company_id,
+          );
+        } else {
           setCurrentCompanyId(null);
-          localStorage.removeItem(COMPANY_STORAGE_KEY)
+          localStorage.removeItem(COMPANY_STORAGE_KEY);
         }
-      }catch (error){
+      } catch {
         setCompanies([]);
         setCurrentCompanyId(null);
         localStorage.removeItem(COMPANY_STORAGE_KEY);
@@ -83,31 +76,18 @@ export const CompanyProvider = ({
       }
     };
     restoreCompanies();
-
   }, [user, isAuthInitializing]);
 
+  const value: CompanyContextType = {
+    companies,
+    currentCompanyId,
+    setCompanies,
+    setCurrentCompanyId,
+    switchCompany,
+    isCompanyInitializing,
+  };
+
   return (
-    <CompanyContext.Provider
-     value={{
-        companies,
-        currentCompanyId,
-        setCompanies,
-        setCurrentCompanyId,
-        switchCompany,
-        isCompanyInitializing,
-      }}
-    >
-      {children}
-    </CompanyContext.Provider>
+    <CompanyContext.Provider value={value}>{children}</CompanyContext.Provider>
   );
-};
-
-export const useCompanyContext = () => {
-  const context = useContext(CompanyContext);
-
-  if (!context) {
-    throw new Error('useCompanyContext must be used within CompanyProvider');
-  }
-
-  return context;
 };

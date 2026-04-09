@@ -1,0 +1,30 @@
+.companyButton {
+    width: clamp(140px, 15vw, 220px);
+    height: clamp(30px, 8vw, 50px);
+    padding: 8px 10px;
+}
+
+.companySwitcher{
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start; 
+    line-height: 1.2; 
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;  
+    
+    span:first-child{
+        font-weight: 600;  
+    }
+
+    span:last-child {
+        font-weight: 400;
+        color: #484848;
+    }
+}
+
+.menuItem{
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start; 
+}

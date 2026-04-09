@@ -10,7 +10,7 @@ const HomePage = () => {
   const handleLogout = () => {
     try {
       setLoading(true);
-      localStorage.removeItem('token');
+      localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
       navigate('/login');
       message.success(`登出成功`);
