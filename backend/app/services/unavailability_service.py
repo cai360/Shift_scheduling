@@ -20,30 +20,9 @@ class UnavailabilityService:
 
             start_at = data["start_at"].astimezone(UTC_TZ)
             end_at = data["end_at"].astimezone(UTC_TZ)
-            now = datetime.now(UTC_TZ)
 
-            if start_at >= end_at:
-                raise ValueError("start_at must be earlier than end_at.")
-
-            if start_at <= now:
-                raise ValueError("Unavailability must be in the future.")
-            
-            if DateTimeRangeService.has_overlap(
-                Unavailability,
-                user_id=user_id,
-                company_id=company_id,
-                start_at=start_at,
-                end_at=end_at
-            ):
-                raise ValueError("Time range overlaps with existing unavailability.")
-            
-            if UnavailabilityService.has_overlap_with_active_assignments(
-                user_id=user_id,
-                company_id=company_id,
-                start_at=start_at,
-                end_at=end_at
-            ):
-                raise ValueError("Time range overlaps with future active assignments.")
+            UnavailabilityService.validate_time_range(start_at, end_at)
+            UnavailabilityService.validate_no_time_conflicts(user_id, company_id, start_at, end_at)
             
             unavailability = Unavailability(
                 start_at=start_at,
@@ -59,6 +38,7 @@ class UnavailabilityService:
         except Exception:
             db.session.rollback()
             raise
+
     @staticmethod
     def get_unavailability(unavailability_id, user_id, company_id):
         membership = CompanyUserService.get_active_membership(company_id=company_id, user_id=user_id)
@@ -96,7 +76,7 @@ class UnavailabilityService:
             .order_by(Unavailability.start_at)
         )
 
-        if scope == "self" :
+        if scope == "self":
             return query.filter_by(user_id= user_id).all()
         
         if scope == "all":
@@ -107,55 +87,43 @@ class UnavailabilityService:
         
     @staticmethod
     def update_unavailability(unavailability_id, user_id, company_id, data):
-        unavailability = UnavailabilityService.get_unavailability(unavailability_id, user_id, company_id)
+        try: 
+            unavailability = UnavailabilityService.get_unavailability(unavailability_id, user_id, company_id)
 
-        if (unavailability.user_id != UUID(user_id)):
-            raise Forbidden("Insufficient permissions")
+            if unavailability.user_id != UUID(user_id):
+                raise Forbidden("Insufficient permissions")
 
-        start_at = data["start_at"].astimezone(UTC_TZ)
-        end_at = data["end_at"].astimezone(UTC_TZ)
-        now = datetime.now(UTC_TZ)
+            start_at = data["start_at"].astimezone(UTC_TZ)
+            end_at = data["end_at"].astimezone(UTC_TZ)
+            
 
-        if start_at >= end_at:
-            raise ValueError("start_at must be earlier than end_at.")
+            UnavailabilityService.validate_time_range(start_at, end_at)
+            UnavailabilityService.validate_no_time_conflicts(user_id, company_id, start_at, end_at,exclude_id=unavailability.id)
 
-        if start_at <= now:
-            raise ValueError("Unavailability must be in the future.")
-    
-        if UnavailabilityService.has_overlap_with_active_assignments(
-            user_id=user_id,
-            company_id=company_id,
-            start_at=start_at,
-            end_at=end_at
-        ):
-            raise ValueError("Time range overlaps with future active assignments.")
-        
-        if DateTimeRangeService.has_overlap(
-            Unavailability,
-            user_id=user_id,
-            company_id=company_id,
-            start_at=start_at,
-            end_at=end_at,
-            exclude_id=unavailability.id
-        ):
-            raise ValueError("Time range overlaps with existing unavailability.")
-        
-        unavailability.start_at = start_at
-        unavailability.end_at = end_at
+            
+            unavailability.start_at = start_at
+            unavailability.end_at = end_at
 
-        db.session.commit()
-        return unavailability
+            db.session.commit()
+            return unavailability
+        except Exception:
+            db.session.rollback()
+            raise
     
     @staticmethod
     def delete_unavailability(unavailability_id, user_id, company_id):
-        unavailability = UnavailabilityService.get_unavailability(unavailability_id, user_id, company_id)
-        
-        if (unavailability.user_id != UUID(user_id)):
-            raise Forbidden("Insufficient permissions")
+        try: 
+            unavailability = UnavailabilityService.get_unavailability(unavailability_id, user_id, company_id)
+            
+            if (unavailability.user_id != UUID(user_id)):
+                raise Forbidden("Insufficient permissions")
 
-        unavailability.deleted_at = datetime.now(tz=UTC_TZ)
-        db.session.commit()
-        return True
+            unavailability.deleted_at = datetime.now(tz=UTC_TZ)
+            db.session.commit()
+            return True
+        except Exception:
+            db.session.rollback()
+            raise
     
     @staticmethod
     def has_overlap_with_active_assignments(user_id, company_id, start_at, end_at):
@@ -174,3 +142,34 @@ class UnavailabilityService:
             Shift.end_at > start_at
         )
         return db.session.query(query.exists()).scalar()
+    
+    @staticmethod
+    def validate_time_range(start_at, end_at):
+        now = datetime.now(UTC_TZ)
+
+        if start_at >= end_at:
+            raise ValueError("start_at must be earlier than end_at.")
+
+        if start_at <= now:
+            raise ValueError("Unavailability must be in the future.")
+        
+    @staticmethod
+    def validate_no_time_conflicts(user_id, company_id, start_at, end_at, exclude_id=None):
+        if UnavailabilityService.has_overlap_with_active_assignments(
+            user_id=user_id,
+            company_id=company_id,
+            start_at=start_at,
+            end_at=end_at
+        ):
+            raise ValueError("Time range overlaps with future active assignments.")
+
+        if DateTimeRangeService.has_overlap(
+            Unavailability,
+            user_id=user_id,
+            company_id=company_id,
+            start_at=start_at,
+            end_at=end_at,
+            exclude_id=exclude_id
+        ):
+            raise ValueError("Time range overlaps with existing unavailability.")
+
