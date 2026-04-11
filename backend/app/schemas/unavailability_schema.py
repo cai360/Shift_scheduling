@@ -1,5 +1,4 @@
-from marshmallow import Schema, fields, validates_schema, ValidationError
-from marshmallow.validate import Length
+from marshmallow import Schema, fields, validates_schema, ValidationError, validate
 
 
 class UnavailabilityCreateSchema(Schema):
@@ -47,3 +46,9 @@ def validate_timezone_aware(dt, field_name):
         raise ValidationError(
             f"{field_name} must be timezone-aware (include timezone info)."
         )
+    
+class UnavailabilityListSchema(Schema):
+    scope = fields.Str(
+        load_default="self",
+        validate=validate.OneOf(["self", "all"])
+    )

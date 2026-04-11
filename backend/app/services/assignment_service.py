@@ -18,7 +18,7 @@ class AssignmentService:
 
         user = CompanyUserService.get_active_membership(company_id=company_id, user_id=target_user_id)
         if not user:
-            raise PermissionError("member doesn't exist")
+            raise ValueError("member doesn't exist")
         
         shifts = (
             Shift.query

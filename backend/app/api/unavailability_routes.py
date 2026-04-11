@@ -3,7 +3,7 @@ from app.extensions import db
 from app.models.unavailability import Unavailability
 from app.schemas.unavailability_schema import *
 from app.utils.auth_decorators import jwt_required
-from app.utils.response import ok, error
+from app.utils.response import ok
 from app.services.unavailability_service import UnavailabilityService
 
 bp = Blueprint("unavailabilities", __name__, url_prefix="/companies/<uuid:company_id>/unavailabilities")
@@ -31,13 +31,16 @@ def get_unavailability(company_id, unavailability_id):
     )
     return ok(UnavailabilityOutSchema().dump(unavailability))
 
-# List companies for the current user
+# List unavailabilities for the current user
 @bp.get("")
 @jwt_required
-def list_for_user(company_id):
+def list_unavailabilities(company_id):
+    query_data = UnavailabilityListSchema().load(request.args)
+
     unavailability = UnavailabilityService.list_unavailabilities(
-        user_id=g.user_id, 
-        company_id=company_id
+        user_id=g.user_id,
+        company_id=company_id,
+        scope=query_data["scope"]
     )
     return ok(UnavailabilityOutSchema(many=True).dump(unavailability))
 
