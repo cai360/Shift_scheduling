@@ -61,6 +61,7 @@ class ShiftService:
 
         candidate_slots = []
         current_date = start_date
+        now = datetime.now(tz=UTC_TZ)
 
         while current_date <= end_date:
             local_start = datetime.combine(
@@ -83,22 +84,12 @@ class ShiftService:
             end_at_utc = local_end.astimezone(UTC_TZ)
 
             slot_start = start_at_utc
-            now = datetime.now(tz=UTC_TZ)
             while slot_start < end_at_utc:
                 slot_end = slot_start + timedelta(minutes=interval_minutes)
                 if slot_start <= now:
                     raise ValueError("Cannot create shifts in the past")
-
-                shift = Shift(
-                    company_id=company_id,
-                    start_at=slot_start,
-                    end_at=slot_end,
-                    capacity=capacity,
-                )
-
-                db.session.add(shift)
-                created_shifts.append(shift)
-
+                
+                candidate_slots.append((slot_start, slot_end))
                 slot_start = slot_end
 
             current_date += timedelta(days=1)
@@ -108,6 +99,7 @@ class ShiftService:
             raise ValueError("Duplicate shift slots detected in request.")
 
         # reject exact duplicate active slots already in DB
+        # TODO:  the range of DB duplicate querycan be narrower
         existing_shifts = (
             Shift.query.filter(
                 Shift.company_id == company_id,
