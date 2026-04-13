@@ -1,42 +1,51 @@
 # Shift Module Design (Draft)
 
 ## Purpose
-The Shift module manages planned working time slots defined by company managers.
+The Shift module manages planned working time slots defined by company managers and owner.
 These shifts act as the base entities for downstream workflows such as assignment, leave requests, and takeovers.
 
 The module focuses on shift generation and lifecycle control, not on employee assignment.
+---
 
 ## Domain
 - A Shift represents a concrete, time-bound working slot.
 - A Shift is not an assignment and does not imply that any employee is assigned.
 - Shifts are created in bulk based on generation rules defined by managers.
+---
 
 ## Core Rules
 - Shifts belong to exactly one company.
-- Only company managers can create, update, or delete shifts.
+- Only company managers and owners can create, update, or delete shifts.
 - Employees have read-only access to shifts.
-- Draft shifts can be updated or hard-deleted.
-- Published shifts are immutable.
-- Published shifts can only be canceled (not deleted) in later stages (out of MVP scope).
+- Draft shifts:
+  - can be updated
+  - can be hard-deleted
+  - may overlap with other draft shifts
+- Published shifts:
+  - are immutable
+  - must not overlap with any other published shift in the same company
+  - can only be canceled in future iterations (out of MVP scope)
+---
 
-## APIs 
-- POST  /componies/{company_id}/shifts/bulk （manager only）
-- GET   /componies/{company_id}/shifts （get all shift）
-- PATCH /shifts/{shift_id} (draft only)
-- DELETE /shifts/{shift_id} (draft only)
-- POST /componies/{company_id}/shifts/publish （manager only）
+## APIs
+- POST   /companies/{company_id}/shifts/bulk  (manager/owner only)
+- GET    /companies/{company_id}/shifts       (list shifts)
+- PATCH  /shifts/{shift_id}                  (draft only)
+- DELETE /shifts/{shift_id}                  (draft only)
+- POST   /companies/{company_id}/shifts/publish (manager/owner only)
 
 API Notes
 - Bulk creation is the primary creation method.
 - Individual update / delete operations are restricted to draft shifts only.
-- Publishing a shift is an explicit state transition.
-- In MVP, publishing is treated as irreversible.
+- Publishing is treated as irreversible in MVP.
+- Bulk publish is **all-or-nothing**:
+  - If any shift is invalid, already published, deleted, or not in the company, the request fails.
 - Canceling published shifts is out of MVP scope.
-
-### Shift Creation (Bulk)
+---
+## Shift Creation (Bulk)
 Shifts are not created one by one by managers, manager defined a time-range and generation rule, and the system generatres individual shift records accordingly. 
 
-request payload would look like this 
+request payload example
 ```
 {
   "start_date": "2025-03-01",
@@ -48,19 +57,42 @@ request payload would look like this
 }
 ```
 
+### Field Definitions
+- **start_date / end_date**  
+  Define the date range for shift generation.
 
-	•	start_date / end_date
-Define the date range for shift generation.
-	•	start_time / end_time
-Define a single continuous daily working period.
-	•	Overnight periods (e.g. 22:00 → 06:00) are supported.
-	•	interval_minutes
-Defines the slot length for generated shifts.
-	•	capacity
-Defines how many employees can be assigned to each shift.
+- **start_time / end_time**  
+  Define a continuous daily working period.  
+  Overnight periods (e.g. 22:00 → 06:00) are supported.
 
-- The system does not prevent overlapping shifts at the draft stage.
-- Overlap validation is enforced only during publishing.
+- **interval_minutes**  
+  Defines slot length for generated shifts.
+
+- **capacity**  
+  Defines how many employees can be assigned to each shift.
+
+### Behavior
+- Draft shifts may overlap.
+- Exact duplicate slots (same start_at, end_at) are rejected 
+- Overlap validation is NOT enforced during creation.
+- Overlap validation is enforced at publish time only.
+---
+
+## Publish Validation Rules
+
+When publishing shifts, the system enforces:
+
+### 1. Candidate vs Candidate
+- No overlap among shifts being published in the same request.
+
+### 2. Candidate vs Existing Published
+- No overlap between candidate shifts and already published shifts.
+
+### Overlap Definition
+```
+A.start_at < B.end_at AND A.end_at > B.start_at
+```
+---
 
 ## Time Handling Rules
 	•	Shift generation is based on wall-clock time, not elapsed real time.
@@ -68,22 +100,17 @@ Defines how many employees can be assigned to each shift.
 	•	Generated shift records are stored in UTC to ensure DST safety.
 	•	Overnight shifts are handled by advancing the end datetime to the next day when needed.
 
+## MVP Scope Decisions
+- Only one continuous working period per day is supported.
+- No breaks or split shifts exposed in API.
+- Simplifies validation and reduces user error.
 
-## MVP Scope Decision
-
-For the MVP:
-	•	Only one continuous working period per day is supported.
-	•	Lunch breaks or split shifts are not exposed in the API.
-	•	This constraint simplifies validation and reduces user error.
-
-Internally, the generation logic is designed so that:
-	•	multiple working periods can be supported later
-	•	without changing the database schema
-	•	and without refactoring existing shift records
+Design allows:
+- future extension without DB schema changes
+- backward compatibility with existing shift records
+---
 
 ## Future Extensions(Out of MVP Scope)
-
-The current design intentionally keeps generation rules stateless and request-based.
 
 The following extensions can be added without breaking existing behavior:
 	1.	Breaks / Non-working Periods

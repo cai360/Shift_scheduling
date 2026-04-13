@@ -45,12 +45,24 @@ class ShiftOutSchema(Schema):
     published_at = fields.DateTime(dump_only=True, allow_none=True)
     deleted_at = fields.DateTime(dump_only=True, allow_none=True)
 
-    assignments = fields.List(
-        fields.Nested(AssignmentOutSchema)
-    )
+    # assignments = fields.Nested(AssignmentOutSchema, many=True)
+    # temporarily removed for list API to reduce payload size
 
     created_at = fields.DateTime(dump_only=True)
     updated_at = fields.DateTime(dump_only=True)
+
+    status = fields.Method("get_status")
+    assignment_count = fields.Method("get_assigned_count")
+    remaining_capacity = fields.Method("get_remaining_capacity")
+
+    def get_status(self, obj):
+        return "published" if obj.published_at else "draft"
+    
+    def get_assigned_count(self, obj):
+        return len(obj.assignments or [])
+    
+    def get_remaining_capacity(self, obj):
+        return obj.capacity - len(obj.assignments or [])
 
 
 class ShiftPublishSchema(Schema):

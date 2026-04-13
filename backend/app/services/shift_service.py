@@ -1,30 +1,29 @@
-from app.models.shift import Shift
+from datetime import datetime, timedelta
+from sqlalchemy import and_
+from sqlalchemy.orm import aliased, selectinload
+from app.config import BUSINESS_TZ, UTC_TZ
 from app.extensions import db
+from app.models.shift import Shift
 from app.services.company_service import CompanyService
 from app.services.companyUser_service import CompanyUserService
 from app.services.permission_services import PermissionService
-from app.models.companies_users import CompanyUser
-from datetime import datetime, timedelta
-from app.config import BUSINESS_TZ, UTC_TZ
-from sqlalchemy import exists, and_
-from sqlalchemy.orm import selectinload
 
 class ShiftService:
 
     @staticmethod
     def create_shifts_bulk(*, data, user_id, company_id):
         """
-        NOTE (MVP scope, to be addressed later):
-
-        1. Overlap / Duplicate Protection - This method does not prevent generating shifts that overlap with existing ones.
-        2. Idempotency- Repeating the same bulk request may generate duplicate shifts.
-        3. Publish State Enforcement - This method does not check whether shifts are already published.
-        4. Bulk Insert Optimization - Shifts are inserted one by one via ORM.
+        MVP behavior:
+        - create draft shifts only
+        - draft shifts may overlap
+        - exact duplicate slots (same start_at, end_at) are rejected
+        - overlap constraints are enforced at publish time
+        - bulk creation is not idempotent
         """
         CompanyService.get_company(company_id)
 
         PermissionService.require_can_manage_company(
-            company_id=company_id, 
+            company_id=company_id,
             user_id=user_id
         )
 
@@ -36,37 +35,50 @@ class ShiftService:
         capacity = data["capacity"]
 
         if start_date > end_date:
-            raise ValueError("start_date must be before or equal to end_date")
-        
-        if end_date == start_date and start_time >= end_time:
-            raise ValueError("endtime must be before start time")
+            raise ValueError("start date must be before or equal to end date")
 
         start_minutes = minutes_since_midnight(start_time)
         end_minutes = minutes_since_midnight(end_time)
 
-        if end_time <= start_time:
-            end_minutes += 24 * 60  # overnight
+        is_overnight = end_time <= start_time
+        if is_overnight and start_date >= end_date:
+            raise ValueError(
+                "Overnight shift generation requires end_date to be after start_date."
+            )
+
+        if is_overnight:
+            end_minutes += 24 * 60
 
         duration_minutes = end_minutes - start_minutes
+
+        if duration_minutes <= 0:
+            raise ValueError("invalid shift duration")
 
         if duration_minutes % interval_minutes != 0:
             raise ValueError(
                 "Shift duration must be divisible by interval_minutes (wall-clock)"
             )
 
-        created_shifts = []
-
+        candidate_slots = []
         current_date = start_date
+        now = datetime.now(tz=UTC_TZ)
+
         while current_date <= end_date:
             local_start = datetime.combine(
-                current_date, start_time, tzinfo=BUSINESS_TZ
+                current_date,
+                start_time,
+                tzinfo=BUSINESS_TZ
             )
             local_end = datetime.combine(
-                current_date, end_time, tzinfo=BUSINESS_TZ
+                current_date,
+                end_time,
+                tzinfo=BUSINESS_TZ
             )
 
-            if end_time <= start_time:
+            if is_overnight:
                 local_end += timedelta(days=1)
+                if local_end.date() > end_date:
+                    break
 
             start_at_utc = local_start.astimezone(UTC_TZ)
             end_at_utc = local_end.astimezone(UTC_TZ)
@@ -74,22 +86,55 @@ class ShiftService:
             slot_start = start_at_utc
             while slot_start < end_at_utc:
                 slot_end = slot_start + timedelta(minutes=interval_minutes)
-
-                shift = Shift(
-                    company_id=company_id,
-                    start_at=slot_start,
-                    end_at=slot_end,
-                    capacity=capacity,
-                )
-
-                db.session.add(shift)
-                created_shifts.append(shift)
-
+                if slot_start <= now:
+                    raise ValueError("Cannot create shifts in the past")
+                
+                candidate_slots.append((slot_start, slot_end))
                 slot_start = slot_end
 
             current_date += timedelta(days=1)
 
+        # reject duplicate slots inside the same request
+        if len(candidate_slots) != len(set(candidate_slots)):
+            raise ValueError("Duplicate shift slots detected in request.")
+
+        # reject exact duplicate active slots already in DB
+        # TODO:  the range of DB duplicate querycan be narrower
+        existing_shifts = (
+            Shift.query.filter(
+                Shift.company_id == company_id,
+                Shift.deleted_at.is_(None),
+            ).all()
+        )
+
+        existing_slot_set = {
+            (shift.start_at, shift.end_at)
+            for shift in existing_shifts
+        }
+
+        duplicate_slots = [
+            (start_at, end_at)
+            for start_at, end_at in candidate_slots
+            if (start_at, end_at) in existing_slot_set
+        ]
+
+        if duplicate_slots:
+            raise ValueError("Exact duplicate shift slots already exist.")
+
+        created_shifts = []
+        for start_at, end_at in candidate_slots:
+            shift = Shift(
+                company_id=company_id,
+                start_at=start_at,
+                end_at=end_at,
+                capacity=capacity,
+            )
+            db.session.add(shift)
+            created_shifts.append(shift)
+
         db.session.commit()
+
+        created_shifts.sort(key=lambda s: s.start_at)
         return created_shifts
     
     @staticmethod
@@ -109,11 +154,15 @@ class ShiftService:
                         Shift.deleted_at.is_(None))
         )
 
-        if membership.role != 'manager':
-            shifts = shifts.filter(Shift.published_at.isnot(None))
+        is_manager = membership.role in ("owner", "manager")
 
-        if status == 'published':
+        if not is_manager:
             shifts = shifts.filter(Shift.published_at.isnot(None))
+        else:
+            if status == "published":
+                shifts = shifts.filter(Shift.published_at.isnot(None))
+            elif status == "draft":
+                shifts = shifts.filter(Shift.published_at.is_(None))
         
         if from_:
             shifts = shifts.filter(
@@ -137,6 +186,9 @@ class ShiftService:
             user_id=user_id
         )
 
+        if len(shift_ids) != len(set(shift_ids)):
+            raise ValueError("shift_ids must be unique")
+
         candidate_shifts = (
             Shift.query.filter(
                 Shift.company_id == company_id,
@@ -146,24 +198,37 @@ class ShiftService:
             ).all()
         )
 
-        candidate_ids = [s.id for s in candidate_shifts]
+        if len(candidate_shifts) != len(shift_ids):
+            raise ValueError(
+                "Some shifts are invalid, deleted, already published, or not in this company."
+            )
 
-        if not candidate_ids:
-            return {"requested": len(shift_ids), "eligible": 0, "published": 0}
+        overlap_candidate_ids = ShiftService._get_overlapping_candidate_shifts(
+            candidate_shifts
+        )
+        if overlap_candidate_ids:
+            raise ValueError(
+                f"Cannot publish shifts: candidate shifts overlap. shift_ids={overlap_candidate_ids}"
+            )
+        
+        overlap_with_published_ids = (
+            ShiftService._get_overlapping_published_shifts(
+                company_id=company_id,
+                shift_ids=shift_ids,
+            )
+        )
 
-        # TODO: return overlapping shift ids for better UX
-        if ShiftService._has_overlap_with_published(
-            company_id=company_id,
-            shift_ids=candidate_ids
-        ):
-            raise ValueError("Cannot publish shifts: overlap with existing published shifts.")
+        if overlap_with_published_ids:
+            raise ValueError(
+                f"Cannot publish shifts: overlap with existing published shifts. shift_ids={overlap_with_published_ids}"
+            )
 
         now = datetime.now(tz=UTC_TZ)
 
         updated_count = (
             Shift.query.filter(
                 Shift.company_id == company_id,
-                Shift.id.in_(candidate_ids),
+                Shift.id.in_(shift_ids),
                 Shift.published_at.is_(None),
                 Shift.deleted_at.is_(None),
             )
@@ -174,37 +239,44 @@ class ShiftService:
         )
         db.session.commit()
 
-        return {"requested": len(shift_ids), "eligible": len(candidate_ids), "published": updated_count}
+        return {
+            "requested": len(shift_ids),
+            "eligible": len(shift_ids),
+            "published": updated_count,
+        }
         
     @staticmethod
-    def _has_overlap_with_published(*, company_id, shift_ids):
+    def _get_overlapping_published_shifts(*, company_id, shift_ids):
         """
-        Return True if any candidate shift (id) overlaps with any publised shifts in the same company.
+        Return candidate draft shift ids that overlap with existing published shifts
+        in the same company.
         """
-        existing = db.aliased(Shift)
-        candidate = db.aliased(Shift)
+        existing = aliased(Shift) #self join
+        candidate = aliased(Shift)
 
-        overlap_exists_query = (
-            db.session.query(
-                exists().where(
-                    and_(
-                        existing.company_id == company_id,
-                        existing.deleted_at.is_(None),
-                        existing.published_at.isnot(None),
-
-                        candidate.company_id == company_id,
-                        candidate.deleted_at.is_(None),
-                        candidate.published_at.is_(None),
-                        candidate.id.in_(shift_ids),
-
-                        existing.start_at < candidate.end_at,
-                        existing.end_at > candidate.start_at
-                    )                 
-                )
+        rows = (
+            db.session.query(candidate.id)
+            .join(
+                existing,
+                and_(
+                    existing.company_id == company_id,
+                    existing.deleted_at.is_(None),
+                    existing.published_at.isnot(None),
+                    existing.start_at < candidate.end_at,
+                    existing.end_at > candidate.start_at,
+                ),
             )
+            .filter(
+                candidate.company_id == company_id,
+                candidate.deleted_at.is_(None),
+                candidate.published_at.is_(None),
+                candidate.id.in_(shift_ids),
+            )
+            .distinct()
+            .all()
         )
 
-        return overlap_exists_query.scalar()
+        return [row[0] for row in rows]
     
     @staticmethod
     def update_shift(*, shift_id, user_id, data):
@@ -212,6 +284,7 @@ class ShiftService:
         MVP:
         - Only draft shifts can be updated
         - Time update recomputes start_at / end_at using BUSINESS_TZ
+        - overlap is not validated here; it is enforced at publish time
         """
         shift = Shift.query.get_or_404(shift_id)
 
@@ -271,6 +344,21 @@ class ShiftService:
         
         db.session.delete(shift)
         db.session.commit()
+
+    @staticmethod
+    def _get_overlapping_candidate_shifts(candidate_shifts):
+        sorted_shifts = sorted(candidate_shifts, key=lambda s: s.start_at)
+        overlap_ids = set()
+
+        for i in range(len(sorted_shifts) - 1):
+            current_shift = sorted_shifts[i]
+            next_shift = sorted_shifts[i + 1]
+
+            if current_shift.end_at > next_shift.start_at:
+                overlap_ids.add(current_shift.id)
+                overlap_ids.add(next_shift.id)
+
+        return list(overlap_ids)
 
 
 
