@@ -276,7 +276,7 @@ class ShiftService:
             .all()
         )
 
-        return [row[0] for row in rows]
+        return sorted([row[0] for row in rows])
     
     @staticmethod
     def update_shift(*, company_id, shift_id, user_id, data):
@@ -377,7 +377,7 @@ class ShiftService:
                 overlap_ids.add(current_shift.id)
                 overlap_ids.add(next_shift.id)
 
-        return list(overlap_ids)
+        return sorted(overlap_ids)
 
 
 
