@@ -324,8 +324,15 @@ class ShiftService:
             if end_time <= start_time:
                 local_end += timedelta(days=1)
 
-            shift.start_at = local_start.astimezone(UTC_TZ)
-            shift.end_at = local_end.astimezone(UTC_TZ)
+            new_start_at = local_start.astimezone(UTC_TZ)
+            new_end_at = local_end.astimezone(UTC_TZ)
+            now = datetime.now(UTC_TZ)
+
+            if new_start_at <= now:
+                raise ValidationAppError("Cannot update shift to the past.")
+            
+            shift.start_at = new_start_at
+            shift.end_at = new_end_at
 
         if "capacity" in data:
             shift.capacity = data["capacity"]
