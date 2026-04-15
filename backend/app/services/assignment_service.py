@@ -39,7 +39,7 @@ class AssignmentService:
         
         AssignmentService._validate_already_assigned(
             target_user_id=target_user_id,
-            shift_ids = shift_ids
+            shift_ids = unique_shift_ids
         )
 
         AssignmentService._validate_capacity(shifts = shifts)
@@ -100,26 +100,39 @@ class AssignmentService:
 
     @staticmethod
     def _validate_with_unavailability(*, company_id, target_user_id, shifts):
+        if not shifts:
+            return
+
+        min_start = min(shift.start_at for shift in shifts)
+        max_end = max(shift.end_at for shift in shifts)
+
+        unavailabilities = (
+            Unavailability.query.filter(
+                Unavailability.company_id == company_id,
+                Unavailability.user_id == target_user_id,
+                Unavailability.deleted_at.is_(None),
+                Unavailability.start_at < max_end,
+                Unavailability.end_at > min_start,
+            ).all()
+        )
+
         conflict_shift_ids = []
 
         for shift in shifts:
-            has_conflict = (
-                Unavailability.query.filter(
-                    Unavailability.company_id == company_id,
-                    Unavailability.user_id == target_user_id,
-                    Unavailability.deleted_at.is_(None),
-                    Unavailability.start_at < shift.end_at,
-                    Unavailability.end_at > shift.start_at,
-                )
-                .first()
-                is not None
+            has_conflict = any(
+                unavailability.start_at < shift.end_at
+                and unavailability.end_at > shift.start_at
+                for unavailability in unavailabilities
             )
 
             if has_conflict:
                 conflict_shift_ids.append(shift.id)
 
         if conflict_shift_ids:
-            raise AssignmentConflictError(conflict_shift_ids=conflict_shift_ids, reason="unavailability_overlap")
+            raise AssignmentConflictError(
+                conflict_shift_ids=sorted(conflict_shift_ids),
+                reason="unavailability_overlap",
+            )
 
     @staticmethod
     def _validate_already_assigned(*, target_user_id, shift_ids):
