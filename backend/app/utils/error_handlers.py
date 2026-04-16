@@ -38,10 +38,11 @@ def register_error_handlers(app):
     @app.errorhandler(AssignmentConflictError)
     def handle_assignment_conflict(err):
         return error(
-            message="Assignment conflict",
+            message= "Assignment conflict",
             status=409,
             details={
                 "conflict_shift_ids": err.conflict_shift_ids,
+                "reason": err.reason,
             },
         )
 
