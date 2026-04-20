@@ -10,11 +10,7 @@ from app.utils.response import ok, error
 bp = Blueprint("users", __name__, url_prefix="/users")
 
 
-@bp.get("/me")
-@jwt_required
-def get_me():
-    user = UserService.get_user(g.user_id)
-    return ok(UserOutSchema().dump(user), 200)
+
 
 
 @bp.patch("/me")

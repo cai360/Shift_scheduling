@@ -2,12 +2,17 @@ from flask import Blueprint, request,g
 from app.schemas.user_schema import UserOutSchema
 from app.schemas.auth_schema import *
 from app.services.auth_service import AuthService
-from app.utils.response import ok, error
-from marshmallow import ValidationError
-
+from app.services.user_service import UserService
+from app.utils.response import ok
+from app.utils.auth_decorators import jwt_required
 bp = Blueprint("auth", __name__, url_prefix="/auth")
 
-#TODO #in the controller layer shouldn't intetactive with db
+@bp.get("/me")
+@jwt_required
+def get_me():
+    user = UserService.get_user(g.user_id)
+    return ok(UserOutSchema().dump(user), 200)
+
 @bp.post("/register")
 def register():
     payload = RegisterSchema().load(request.get_json() or {})
@@ -31,7 +36,6 @@ def login():
 
     return ok(tokens, status=200)
 
-@bp.post("/login")
 @bp.post("/refresh")
 def refresh():
     data = RefreshSchema().load(request.get_json() or {})
