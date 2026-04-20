@@ -66,7 +66,7 @@ export interface JoinCompanyResponse {
 // }
 
 export const getMe = () => {
-  return http.get<MePayload>('/users/me');
+  return http.get<MePayload>('/auth/me');
 };
 
 export const login = (payload: LoginPayload) => {
