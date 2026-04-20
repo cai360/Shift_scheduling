@@ -5,10 +5,9 @@ from app.services.companyUser_service import CompanyUserService
 from app.services.permission_services import PermissionService
 from app.services.datetimeRange_service import DateTimeRangeService
 from app.extensions import db
+from app.errors.error_base import *
 from datetime import datetime
-from werkzeug.exceptions import Forbidden, NotFound
 from app.config import UTC_TZ
-from uuid import UUID
 
 class UnavailabilityService:
     @staticmethod
@@ -16,7 +15,7 @@ class UnavailabilityService:
         try:
             membership = CompanyUserService.get_active_membership(company_id=company_id, user_id=user_id)
             if not membership:
-                raise Forbidden("User not in this company")
+                raise NotFoundError(message="User not found in this company")
 
             start_at = data["start_at"].astimezone(UTC_TZ)
             end_at = data["end_at"].astimezone(UTC_TZ)
@@ -43,7 +42,7 @@ class UnavailabilityService:
     def get_unavailability(unavailability_id, user_id, company_id):
         membership = CompanyUserService.get_active_membership(company_id=company_id, user_id=user_id)
         if not membership:
-            raise Forbidden("Not a company member.")
+            raise NotFoundError(message="User not found in this company")
         
         unavailability = Unavailability.query.filter_by(
             id=unavailability_id,
@@ -52,9 +51,9 @@ class UnavailabilityService:
         ).first()
 
         if not unavailability:
-            raise NotFound("Unavailability does not exist.")
+            raise NotFoundError(message="Unavailability does not exists.")
         
-        if unavailability.user_id == UUID(user_id):
+        if unavailability.user_id == user_id:
             return unavailability
 
         PermissionService.require_can_manage_company(
@@ -63,13 +62,13 @@ class UnavailabilityService:
         )
         return unavailability
     
-    @staticmethod
+
     def list_unavailabilities(user_id, company_id, scope="self"):
 
         membership = CompanyUserService.get_active_membership(company_id=company_id, user_id=user_id)
 
         if not membership:
-            raise Forbidden("Not a company member.")
+            raise PermissionDeniedError(message="Insufficient permissions")
 
         query = (
             Unavailability.query.filter_by(company_id=company_id, deleted_at=None)
@@ -81,7 +80,7 @@ class UnavailabilityService:
         
         if scope == "all":
             if membership.role not in ("owner", "manager"):
-                raise Forbidden("Insufficient permissions")
+                raise PermissionDeniedError(message="Insufficient permissions")
             return query.all()
         raise ValueError("Invalid scope.")
         
@@ -90,16 +89,15 @@ class UnavailabilityService:
         try: 
             unavailability = UnavailabilityService.get_unavailability(unavailability_id, user_id, company_id)
 
-            if unavailability.user_id != UUID(user_id):
-                raise Forbidden("Insufficient permissions")
+            if (unavailability.user_id != user_id):
+                raise PermissionDeniedError(message="Insufficient permissions")
 
             start_at = data["start_at"].astimezone(UTC_TZ)
             end_at = data["end_at"].astimezone(UTC_TZ)
-            
+
 
             UnavailabilityService.validate_time_range(start_at, end_at)
             UnavailabilityService.validate_no_time_conflicts(user_id, company_id, start_at, end_at,exclude_id=unavailability.id)
-
             
             unavailability.start_at = start_at
             unavailability.end_at = end_at
@@ -112,11 +110,11 @@ class UnavailabilityService:
     
     @staticmethod
     def delete_unavailability(unavailability_id, user_id, company_id):
-        try: 
+        try:    
             unavailability = UnavailabilityService.get_unavailability(unavailability_id, user_id, company_id)
             
-            if (unavailability.user_id != UUID(user_id)):
-                raise Forbidden("Insufficient permissions")
+            if unavailability.user_id != user_id:
+               PermissionDeniedError(message="Insufficient permissions")
 
             unavailability.deleted_at = datetime.now(tz=UTC_TZ)
             db.session.commit()

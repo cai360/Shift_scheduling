@@ -3,11 +3,12 @@ from app.models import ShiftAssignment, Shift, Unavailability
 from app.services.company_service import CompanyService
 from app.services.companyUser_service import CompanyUserService
 from app.services.permission_services import PermissionService
-from app.errors.assignment import AssignmentConflictError, AssignmentCapacityExceededError
+
 from datetime import datetime
 from app.config import UTC_TZ
 from sqlalchemy.orm import selectinload
 from sqlalchemy import func
+from app.errors.error_base import *
 
 class AssignmentService:
     @staticmethod
@@ -18,7 +19,7 @@ class AssignmentService:
 
         user = CompanyUserService.get_active_membership(company_id=company_id, user_id=target_user_id)
         if not user:
-            raise ValueError("member doesn't exist")
+            NotFoundError(message="Company member not found")
         
         unique_shift_ids = list(dict.fromkeys(shift_ids))
         if len(unique_shift_ids) != len(shift_ids):
@@ -33,9 +34,8 @@ class AssignmentService:
                 Shift.published_at.isnot(None)
             ).all()
         )
-
         if len(shifts) != len(unique_shift_ids):
-            raise ValueError("Some shifts are invalid, not published, or not in this company")
+             raise ValidationAppError("Some shifts are invalid, not published, or not in this company")
         
         AssignmentService._validate_already_assigned(
             target_user_id=target_user_id,
@@ -85,7 +85,7 @@ class AssignmentService:
             return
         
         if len(assignments) != len(assignment_ids):
-            raise PermissionError("Some assignments do not belong to this company")
+            raise NotFoundError(message="Some assignments do not belong to this company")
         
         now = datetime.now(tz=UTC_TZ)
 
@@ -129,9 +129,9 @@ class AssignmentService:
                 conflict_shift_ids.append(shift.id)
 
         if conflict_shift_ids:
-            raise AssignmentConflictError(
-                conflict_shift_ids=sorted(conflict_shift_ids),
-                reason="unavailability_overlap",
+            raise ConflictError(
+                message="unavailability_overlap",
+                details=sorted(conflict_shift_ids),
             )
 
     @staticmethod
@@ -146,7 +146,10 @@ class AssignmentService:
 
         if conflicts:
             conflict_shift_ids = [a.shift_id for a in conflicts]
-            raise AssignmentConflictError(conflict_shift_ids=conflict_shift_ids)
+            raise ConflictError(
+                message="assignment.already_assigned",
+                details={"conflict_shift_ids": sorted(conflict_shift_ids)},
+        )
         
     @staticmethod
     def _validate_capacity(shifts):
@@ -168,7 +171,10 @@ class AssignmentService:
                 over_capacity_shift_ids.append(shift.id)
 
         if over_capacity_shift_ids:
-            raise AssignmentCapacityExceededError(over_capacity_shift_ids)
+            raise ConflictError(
+                    message="assignment.capacity_exceeded",
+                    details={"shift_ids": sorted(over_capacity_shift_ids)},
+                )
 
 
 

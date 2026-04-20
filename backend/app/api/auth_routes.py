@@ -1,71 +1,46 @@
 from flask import Blueprint, request,g
-from app.extensions import db 
-from app.models.user import User
 from app.schemas.user_schema import UserOutSchema
 from app.schemas.auth_schema import *
-from app.services.auth_service import AuthService, RegisterError
-from app.utils.response import ok, error
-from marshmallow import ValidationError
+from app.services.auth_service import AuthService
+from app.services.user_service import UserService
+from app.utils.response import ok
 from app.utils.auth_decorators import jwt_required
-
 bp = Blueprint("auth", __name__, url_prefix="/auth")
 
 @bp.get("/me")
 @jwt_required
 def get_me():
-    user = User.query.get(g.user_id)
-    if not user:
-        return error("User not found", 404)
+    user = UserService.get_user(g.user_id)
     return ok(UserOutSchema().dump(user), 200)
 
-
-#TODO #in the controller layer shouldn't intetactive with db
 @bp.post("/register")
 def register():
-    try:
-        payload = RegisterSchema().load(request.json or {})
-    except ValidationError as err:
-        return error("Validation error", 400, err.messages)
+    payload = RegisterSchema().load(request.get_json() or {})
 
-    try:
-        user = AuthService.register_user(
-            username=payload["username"],
-            email=payload["email"],
-            password=payload["password"]
-        )
-    except RegisterError as err:
-        return error(str(err), 409)
+    user = AuthService.register_user(
+        username=payload["username"],
+        email=payload["email"],
+        password=payload["password"],
+    )
 
     return ok(UserOutSchema().dump(user), 201)
 
 @bp.post("/login")
 def login():
-    try:
-        data = LoginSchema().load(request.json or {})
-    except ValidationError as err:
-        return error("Validation error", status=400, details=err.messages)
-    
-    user = AuthService.authenticate(data["email"], data["password"])
-    if not user:
-        return error("Invalid email or password", status=401)
+    data = LoginSchema().load(request.get_json() or {})
 
-    tokens = AuthService.issue_tokens(user.id)
+    tokens = AuthService.authenticate(
+        data["email"],
+        data["password"],
+    )
 
     return ok(tokens, status=200)
 
 @bp.post("/refresh")
 def refresh():
-    try:
-        data = RefreshSchema().load(request.json or {})
-    except ValidationError as err:
-        return error("Validation error", status=400, details=err.messages)
-    
-    refresh_token = data["refresh_token"]
-       
-    try:
-        new_access = AuthService.issue_access_from_refresh(refresh_token)
-    except ValueError as err:
-        return error(str(err), status=401)
+    data = RefreshSchema().load(request.get_json() or {})
+
+    new_access = AuthService.issue_access_from_refresh(data["refresh_token"])
 
     return ok(new_access, status=200)
 

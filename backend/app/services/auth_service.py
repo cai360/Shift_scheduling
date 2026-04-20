@@ -6,17 +6,14 @@ from flask import current_app
 from app.models.user import User
 from app.extensions import db
 from sqlalchemy.exc import IntegrityError
-
-class RegisterError(Exception):
-    pass
-
+from app.errors.error_base import *
 
 class AuthService:
     @staticmethod
     def register_user(username: str, email: str, password: str) -> User:
         existing = User.query.filter_by(email=email).first()
         if existing:
-            raise RegisterError("Email already exists")
+            raise ConflictError("Email already exists")
 
         hashed = AuthService.hash_password(password)
 
@@ -31,7 +28,7 @@ class AuthService:
             db.session.commit()
         except IntegrityError:
             db.session.rollback()
-            raise RegisterError("Failed to create user")
+            raise ConflictError("Failed to create user")
 
         return user
         
@@ -58,16 +55,13 @@ class AuthService:
     
         
     @staticmethod
-    def  authenticate(email: str, password: str):
-        """Return user object if OK, otherwise None"""
+    def authenticate(email: str, password: str) -> dict:
         user = User.query.filter_by(email=email).first()
-        if not user:
-            return None
-        if AuthService.verify_password(password, user.hash):
-            return user
-        return None
-        
+        if not user or not AuthService.verify_password(password, user.hash):
+            raise UnauthorizedError("Invalid email or password")
 
+        return AuthService.issue_tokens(user.id)
+        
     @staticmethod
     def issue_tokens(user_id) -> dict:
         secret = AuthService._cfg("JWT_SECRET")
@@ -77,7 +71,6 @@ class AuthService:
         refresh_days = int(AuthService._cfg("JWT_REFRESH_EXPIRES_DAYS", 7))
         now = datetime.now(timezone.utc)
 
-        #access token (subject, type, issued_at, expired)
         a = {
             "sub": str(user_id),
             "type": "access",
@@ -105,12 +98,13 @@ class AuthService:
         try: 
             payload = jwt.decode(token, secret, algorithms=["HS256"])
             if payload.get("type") != expected_type:
-                raise ValueError("Invalid token type")
+                raise UnauthorizedError("Invalid token type")
+
             return payload
         except jwt.ExpiredSignatureError:
-            raise ValueError("Token expired")
+            raise UnauthorizedError("Token expired")
         except jwt.InvalidTokenError:
-            raise ValueError("Token invalid")
+            raise UnauthorizedError("Token expired")
 
     @staticmethod
     def issue_access_from_refresh(refresh_token: str) -> dict:

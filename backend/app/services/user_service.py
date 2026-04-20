@@ -2,6 +2,7 @@ from app.models.user import User
 from app.extensions import db
 from app.models.companies_users import CompanyUser
 from app.services.auth_service import AuthService
+from app.errors.error_base import *
 from datetime import datetime, timezone
 from app.models.companies import Company
 
@@ -15,7 +16,7 @@ class UserService:
         ).first()
 
         if not user:
-            raise ValueError("User not found")
+            raise NotFoundError(message="User not found")
         return user
     
     @staticmethod
@@ -25,7 +26,7 @@ class UserService:
         if "email" in data:
             existing = User.query.filter_by(email=data["email"]).first()
             if existing and existing.id != user_id:
-                raise ValueError("Email already exists")
+                raise ConflictError("Email already exists")
         
         for key, value in data.items():
             setattr(user, key, value)
@@ -40,7 +41,7 @@ class UserService:
         user = UserService.get_user(user_id)
         
         if not AuthService.verify_password(old_password, user.hash):
-            raise ValueError("Old password is incorrect")
+            raise ValidationAppError("Old password is incorrect")
         
         hash_password = AuthService.hash_password(new_password)
         user.hash = hash_password

@@ -1,4 +1,5 @@
 from app.services.companyUser_service import CompanyUserService
+from app.errors.error_base import PermissionDeniedError
 from typing import Iterable
 from werkzeug.exceptions import Forbidden
 
@@ -10,9 +11,9 @@ class PermissionService:
             user_id=user_id
         )
         if not membership:
-            raise Forbidden("Membership not found.")
+            raise PermissionDeniedError(message="Membership not found.")
         if membership.role not in allowed_roles:
-            raise Forbidden("Permission denied.")
+            raise PermissionDeniedError(message="Permission denied.")
         return membership
 
     @staticmethod

@@ -10,11 +10,7 @@ from app.utils.response import ok, error
 bp = Blueprint("users", __name__, url_prefix="/users")
 
 
-@bp.get("/me")
-@jwt_required
-def get_me():
-    user = UserService.get_user(g.user_id)
-    return ok(UserOutSchema().dump(user), 200)
+
 
 
 @bp.patch("/me")
@@ -51,7 +47,7 @@ def update_password():
     return ok({"message": "Password updated successfully"}, 200)
 
 # List companies where user belongs  for the current user
-@bp.get("me/companies")
+@bp.get("/me/companies")
 @jwt_required
 def list_user_companies():
     companies = UserService.list_companies_for_user(g.user_id)

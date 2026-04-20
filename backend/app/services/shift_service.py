@@ -7,6 +7,7 @@ from app.models.shift import Shift
 from app.services.company_service import CompanyService
 from app.services.companyUser_service import CompanyUserService
 from app.services.permission_services import PermissionService
+from app.errors.error_base import *
 
 class ShiftService:
 
@@ -35,14 +36,14 @@ class ShiftService:
         capacity = data["capacity"]
 
         if start_date > end_date:
-            raise ValueError("start date must be before or equal to end date")
+            raise  ValidationAppError("start date must be before or equal to end date")
 
         start_minutes = minutes_since_midnight(start_time)
         end_minutes = minutes_since_midnight(end_time)
 
         is_overnight = end_time <= start_time
         if is_overnight and start_date >= end_date:
-            raise ValueError(
+            raise ValidationAppError(
                 "Overnight shift generation requires end_date to be after start_date."
             )
 
@@ -52,10 +53,10 @@ class ShiftService:
         duration_minutes = end_minutes - start_minutes
 
         if duration_minutes <= 0:
-            raise ValueError("invalid shift duration")
+            raise ValidationAppError("invalid shift duration")
 
         if duration_minutes % interval_minutes != 0:
-            raise ValueError(
+            raise ValidationAppError(
                 "Shift duration must be divisible by interval_minutes (wall-clock)"
             )
 
@@ -87,7 +88,7 @@ class ShiftService:
             while slot_start < end_at_utc:
                 slot_end = slot_start + timedelta(minutes=interval_minutes)
                 if slot_start <= now:
-                    raise ValueError("Cannot create shifts in the past")
+                    raise ValidationAppError("request includes past slots")
                 
                 candidate_slots.append((slot_start, slot_end))
                 slot_start = slot_end
@@ -96,7 +97,7 @@ class ShiftService:
 
         # reject duplicate slots inside the same request
         if len(candidate_slots) != len(set(candidate_slots)):
-            raise ValueError("Duplicate shift slots detected in request.")
+            raise ValidationAppError("Duplicate shift slots detected in request.")
 
         # reject exact duplicate active slots already in DB
         # TODO:  the range of DB duplicate querycan be narrower
@@ -119,7 +120,7 @@ class ShiftService:
         ]
 
         if duplicate_slots:
-            raise ValueError("Exact duplicate shift slots already exist.")
+            raise ConflictError("Exact duplicate shift slots already exist.")
 
         created_shifts = []
         for start_at, end_at in candidate_slots:
@@ -146,7 +147,7 @@ class ShiftService:
         membership = CompanyUserService.get_active_membership(company_id=company_id, user_id=user_id)
 
         if not membership:
-            raise PermissionError("Not a company member.")
+            raise PermissionDeniedError(message="Access denied.")
         
         shifts = (
             Shift.query.options(selectinload(Shift.assignments))
@@ -187,7 +188,7 @@ class ShiftService:
         )
 
         if len(shift_ids) != len(set(shift_ids)):
-            raise ValueError("shift_ids must be unique")
+            raise ValidationAppError("shift_ids must be unique")
 
         candidate_shifts = (
             Shift.query.filter(
@@ -199,15 +200,15 @@ class ShiftService:
         )
 
         if len(candidate_shifts) != len(shift_ids):
-            raise ValueError(
-                "Some shifts are invalid, deleted, already published, or not in this company."
+            raise ValidationAppError(message=
+               "Some shift_ids are invalid for publishing."
             )
 
         overlap_candidate_ids = ShiftService._get_overlapping_candidate_shifts(
             candidate_shifts
         )
         if overlap_candidate_ids:
-            raise ValueError(
+            raise ConflictError(message=
                 f"Cannot publish shifts: candidate shifts overlap. shift_ids={overlap_candidate_ids}"
             )
         
@@ -219,7 +220,7 @@ class ShiftService:
         )
 
         if overlap_with_published_ids:
-            raise ValueError(
+            raise ConflictError(message=
                 f"Cannot publish shifts: overlap with existing published shifts. shift_ids={overlap_with_published_ids}"
             )
 
@@ -241,7 +242,6 @@ class ShiftService:
 
         return {
             "requested": len(shift_ids),
-            "eligible": len(shift_ids),
             "published": updated_count,
         }
         
@@ -279,22 +279,28 @@ class ShiftService:
         return [row[0] for row in rows]
     
     @staticmethod
-    def update_shift(*, shift_id, user_id, data):
+    def update_shift(*, company_id, shift_id, user_id, data):
         """
         MVP:
         - Only draft shifts can be updated
         - Time update recomputes start_at / end_at using BUSINESS_TZ
         - overlap is not validated here; it is enforced at publish time
         """
-        shift = Shift.query.get_or_404(shift_id)
+        shift = Shift.query.filter(
+            Shift.id == shift_id,
+            Shift.company_id == company_id,
+            Shift.deleted_at.is_(None),
+        ).first()
+        if not shift:
+            raise NotFoundError(message="Shift not found")
 
         PermissionService.require_can_manage_company(
-            company_id=shift.company_id,
+            company_id=company_id,
             user_id=user_id
         )
 
         if shift.published_at is not None:
-            raise ValueError("Cannot update a published shift.")
+            raise ConflictError(message="Cannot update a published shift.")
 
         if "start_time" in data or "end_time" in data:
             local_date = shift.start_at.astimezone(BUSINESS_TZ).date()
@@ -329,18 +335,24 @@ class ShiftService:
 
 
     @staticmethod
-    def delete_shift(*, shift_id, user_id):
+    def delete_shift(*, company_id, shift_id, user_id):
         """
         draft shift can be hard delete
         """
-        shift = Shift.query.get_or_404(shift_id)
+        shift = Shift.query.filter(
+            Shift.id == shift_id,
+            Shift.company_id == company_id,
+            Shift.deleted_at.is_(None),
+        ).first()
+        if not shift:
+            raise NotFoundError(message="Shift not found")
         PermissionService.require_can_manage_company(
-            company_id=shift.company_id,
+            company_id=company_id,
             user_id = user_id
         )
 
         if shift.published_at is not None:
-            raise ValueError("Cannot delete a published shift.")
+            raise ConflictError(message="Cannot delete a published shift.")
         
         db.session.delete(shift)
         db.session.commit()

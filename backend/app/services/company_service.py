@@ -6,6 +6,7 @@ from app.models.shift_assignments import ShiftAssignment
 from app.models.shift_takeovers import ShiftTakeover
 from app.models.leaves import Leave
 from app.models.unavailability import Unavailability
+from app.errors.error_base import *
 from datetime import datetime, timezone
 
 class CompanyService:
@@ -40,7 +41,7 @@ class CompanyService:
         ).first()
 
         if not company:
-            raise ValueError("Company not found")
+            raise NotFoundError("Company not found")
 
         return company
 
@@ -55,7 +56,7 @@ class CompanyService:
         ).first()
 
         if not company_user or company_user.role != "manager":
-            raise PermissionError("Only manager can update company information.")
+            raise PermissionDeniedError(message="Only manager can update company information.")
 
         for key, value in data.items():
             setattr(company, key, value)

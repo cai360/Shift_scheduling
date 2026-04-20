@@ -1,11 +1,9 @@
-from app.models.companies import Company
-from app.models.user import User
 from app.extensions import db
 from app.models.companies_users import CompanyUser 
 from sqlalchemy.orm import selectinload
 from app.services.company_service import CompanyService
 from datetime import datetime, timezone
-
+from app.errors.error_base import NotFoundError, ConflictError, ValidationAppError, PermissionDeniedError
 
 class CompanyUserService:
     @staticmethod
@@ -25,7 +23,7 @@ class CompanyUserService:
         )
 
         if not membership:
-            raise PermissionError("Only company members can view members")
+            raise PermissionDeniedError(message="Access denied.")
         
         return CompanyUser.query.options(selectinload(CompanyUser.user)).filter(
             CompanyUser.company_id == company_id,
@@ -88,7 +86,7 @@ class CompanyUserService:
             user_id = user_id
         )
         if not membership:
-            raise ValueError("User is not a company member")
+            raise NotFoundError(message="Membership not found")
         
         member_count = CompanyUserService.count_active_members(company_id)
 
@@ -121,16 +119,16 @@ class CompanyUserService:
             user_id=target_user_id
         )
         if not target:
-            raise ValueError("Target user is not a company member")
+            raise NotFoundError(message="User not found in this company")
         
         actor = CompanyUserService.get_active_membership(
             company_id=company_id,
             user_id=actor_user_id
         )
         if not actor:
-            raise ValueError("Actor is not a company member.")
+            raise NotFoundError(message="User not found in this company")
         if actor.role != "owner":
-            raise PermissionError("Only owner can transfer ownership.")
+            raise PermissionDeniedError("Only owner can transfer ownership.")
 
         try:
             actor.role = "manager"
