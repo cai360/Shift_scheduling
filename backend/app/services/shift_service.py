@@ -100,11 +100,15 @@ class ShiftService:
             raise ValidationAppError("Duplicate shift slots detected in request.")
 
         # reject exact duplicate active slots already in DB
-        # TODO:  the range of DB duplicate querycan be narrower
+        min_candidate_start = min(start_at for start_at, _ in candidate_slots)
+        max_candidate_end = max(end_at for _, end_at in candidate_slots)
+
         existing_shifts = (
             Shift.query.filter(
                 Shift.company_id == company_id,
                 Shift.deleted_at.is_(None),
+                Shift.start_at < max_candidate_end,
+                Shift.end_at > min_candidate_start,
             ).all()
         )
 
