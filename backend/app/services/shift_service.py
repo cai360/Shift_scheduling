@@ -333,6 +333,9 @@ class ShiftService:
         new_start_at = data.get("start_time", shift.start_at)
         new_end_at = data.get("end_time", shift.end_at)
 
+        new_start_at = new_start_at.astimezone(UTC_TZ)
+        new_end_at = new_end_at.astimezone(UTC_TZ)
+
         if new_start_at >= new_end_at:
             raise ValidationAppError("end_time must be later than start_time.")
 
@@ -340,8 +343,8 @@ class ShiftService:
         if new_start_at <= now:
             raise ValidationAppError("Cannot update shift to the past.")
 
-        shift.start_at = new_start_at.astimezone(UTC_TZ)
-        shift.end_at = new_end_at.astimezone(UTC_TZ)
+        shift.start_at = new_start_at
+        shift.end_at = new_end_at
 
         if "capacity" in data:
             shift.capacity = data["capacity"]
