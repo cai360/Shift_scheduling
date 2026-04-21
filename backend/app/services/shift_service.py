@@ -307,7 +307,7 @@ class ShiftService:
         """
         MVP:
         - Only draft shifts can be updated
-        - Time update recomputes start_at / end_at using BUSINESS_TZ
+        - start_at / end_at are updated directly from submitted datetimes
         - overlap is not validated here; it is enforced at publish time
         """
         shift = Shift.query.filter(
@@ -326,37 +326,18 @@ class ShiftService:
         if shift.published_at is not None:
             raise ConflictError(message="Cannot update a published shift.")
 
-        if "start_time" in data or "end_time" in data:
-            local_date = shift.start_at.astimezone(BUSINESS_TZ).date()
+        new_start_at = data.get("start_time", shift.start_at)
+        new_end_at = data.get("end_time", shift.end_at)
 
-            start_time = data.get(
-                "start_time",
-                shift.start_at.astimezone(BUSINESS_TZ).time()
-            )
-            end_time = data.get(
-                "end_time",
-                shift.end_at.astimezone(BUSINESS_TZ).time()
-            )
+        if new_start_at >= new_end_at:
+            raise ValidationAppError("end_time must be later than start_time.")
 
-            local_start = datetime.combine(
-                local_date, start_time, tzinfo=BUSINESS_TZ
-            )
-            local_end = datetime.combine(
-                local_date, end_time, tzinfo=BUSINESS_TZ
-            )
+        now = datetime.now(tz=UTC_TZ)
+        if new_start_at <= now:
+            raise ValidationAppError("Cannot update shift to the past.")
 
-            if end_time <= start_time:
-                local_end += timedelta(days=1)
-
-            new_start_at = local_start.astimezone(UTC_TZ)
-            new_end_at = local_end.astimezone(UTC_TZ)
-            now = datetime.now(UTC_TZ)
-
-            if new_start_at <= now:
-                raise ValidationAppError("Cannot update shift to the past.")
-            
-            shift.start_at = new_start_at
-            shift.end_at = new_end_at
+        shift.start_at = new_start_at.astimezone(UTC_TZ)
+        shift.end_at = new_end_at.astimezone(UTC_TZ)
 
         if "capacity" in data:
             shift.capacity = data["capacity"]

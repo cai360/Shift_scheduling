@@ -73,8 +73,8 @@ class ShiftPublishSchema(Schema):
     )
 
 class ShiftUpdateSchema(Schema):
-    start_time = fields.Time(required=False)
-    end_time = fields.Time(required=False)
+    start_time = fields.DateTime(required=False)
+    end_time = fields.DateTime(required=False)
 
     capacity = fields.Integer(
         required=False,
