@@ -190,28 +190,52 @@ class ShiftService:
         if len(shift_ids) != len(set(shift_ids)):
             raise ValidationAppError("shift_ids must be unique")
 
-        candidate_shifts = (
-            Shift.query.filter(
-                Shift.company_id == company_id,
-                Shift.id.in_(shift_ids),
-                Shift.published_at.is_(None),
-                Shift.deleted_at.is_(None),
-            ).all()
-        )
+        # ---- validation: invalid / already published ----
+        shifts = Shift.query.filter(
+            Shift.id.in_(shift_ids)
+        ).all()
 
-        if len(candidate_shifts) != len(shift_ids):
-            raise ValidationAppError(message=
-               "Some shift_ids are invalid for publishing."
+        found_by_id = {shift.id: shift for shift in shifts}
+
+        not_found_ids = [
+            shift_id for shift_id in shift_ids
+            if shift_id not in found_by_id
+        ]
+
+        invalid_shift_ids = []
+        already_published_ids = []
+        candidate_shifts = []
+
+        for shift in shifts:
+            if shift.company_id != company_id or shift.deleted_at is not None:
+                invalid_shift_ids.append(shift.id)
+            elif shift.published_at is not None:
+                already_published_ids.append(shift.id)
+            else:
+                candidate_shifts.append(shift)
+
+        invalid_shift_ids = sorted(set(not_found_ids + invalid_shift_ids))
+        already_published_ids = sorted(already_published_ids)
+
+        if invalid_shift_ids:
+            raise ValidationAppError(
+                f"Some shift_ids are invalid for publishing. shift_ids={invalid_shift_ids}"
             )
 
+        if already_published_ids:
+            raise ConflictError(
+                f"Some shifts are already published. shift_ids={already_published_ids}"
+            )
+
+        # ---- validation: overlap ----
         overlap_candidate_ids = ShiftService._get_overlapping_candidate_shifts(
             candidate_shifts
         )
         if overlap_candidate_ids:
-            raise ConflictError(message=
+            raise ConflictError(
                 f"Cannot publish shifts: candidate shifts overlap. shift_ids={overlap_candidate_ids}"
             )
-        
+
         overlap_with_published_ids = (
             ShiftService._get_overlapping_published_shifts(
                 company_id=company_id,
@@ -220,10 +244,10 @@ class ShiftService:
         )
 
         if overlap_with_published_ids:
-            raise ConflictError(message=
+            raise ConflictError(
                 f"Cannot publish shifts: overlap with existing published shifts. shift_ids={overlap_with_published_ids}"
             )
-
+        # ---- publish ----
         now = datetime.now(tz=UTC_TZ)
 
         updated_count = (
@@ -244,7 +268,7 @@ class ShiftService:
             "requested": len(shift_ids),
             "published": updated_count,
         }
-        
+
     @staticmethod
     def _get_overlapping_published_shifts(*, company_id, shift_ids):
         """
