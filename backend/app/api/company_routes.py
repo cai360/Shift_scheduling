@@ -2,7 +2,7 @@ from flask import Blueprint, request,g
 from app.extensions import db
 from app.models.companies import Company
 from app.schemas.company_schema import * 
-from app.schemas.companyUser_schema import CompanyUserOutSchema, TransferOwnershipSchema
+from app.schemas.companyUser_schema import CompanyUserOutSchema, TransferOwnershipSchema, UpdateRoleSchema
 from app.utils.auth_decorators import jwt_required
 from app.utils.response import ok, error
 from app.services.company_service import CompanyService
@@ -97,7 +97,18 @@ def leave_company(company_id):
     )
     return ok()
 
+@bp.patch("/<uuid:company_id>/users/<target_user_id>/role")
+@jwt_required
+def update_company_user_role(company_id, target_user_id):
+    data = UpdateRoleSchema().load(request.get_json())
 
+    member = CompanyUserService.update_role(
+        company_id=company_id,
+        actor_user_id=g.user_id,
+        target_user_id=target_user_id,
+        role=data["role"],
+    )
 
+    return ok(CompanyUserOutSchema().dump(member))
 
 

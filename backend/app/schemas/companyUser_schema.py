@@ -1,4 +1,4 @@
-from marshmallow import Schema, fields
+from marshmallow import Schema, fields, validate
 
 class CompanyUserOutSchema(Schema):
     user_id = fields.UUID()
@@ -15,3 +15,9 @@ class CompanyUserOutSchema(Schema):
 
 class TransferOwnershipSchema(Schema):
     target_user_id = fields.UUID(required=True)
+
+class UpdateRoleSchema(Schema):
+    role = fields.String(
+        required=True,
+        validate=validate.OneOf(["manager", "employee"]),
+    )
