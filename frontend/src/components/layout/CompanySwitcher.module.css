@@ -7,14 +7,18 @@
 .companySwitcher{
     display: flex;
     flex-direction: column;
-    align-items: flex-start; 
     line-height: 1.2; 
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;  
+    width: 100%;
+    min-width: 0; 
     
     span:first-child{
-        font-weight: 600;  
+        font-weight: 600; 
+        display: block;
+        width: 100%;
+        min-width: 0; 
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis; 
     }
 
     span:last-child {
@@ -26,5 +30,15 @@
 .menuItem{
     display: flex;
     flex-direction: column;
-    align-items: flex-start; 
+    align-items: flex-start;
+    width: 180px;
+    min-width: 0; 
+
+    span:first-child {
+        width: 100%;
+        display: block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
 }
