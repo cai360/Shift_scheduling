@@ -1,4 +1,5 @@
 import http from '../utils/http';
+import { ApiResponse } from './auth.api';
 
 export interface MyCompany {
   company_id: string;
@@ -8,6 +9,9 @@ export interface MyCompany {
 
 export type MyCompaniesResponse = MyCompany[];
 
-export const getMyCompanies = () => {
-  return http.get<MyCompaniesResponse>('/users/me/companies');
+export const getMyCompanies = async (): Promise<MyCompany[]> => {
+  const res = await http.get<ApiResponse<MyCompaniesResponse>>(
+    '/users/me/companies',
+  );
+  return res.data;
 };

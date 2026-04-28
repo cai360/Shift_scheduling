@@ -28,3 +28,13 @@ export const updateRole = async (
   );
   return res.data;
 };
+
+export const transferOwner = async (
+  companyId: string,
+  targetId: string,
+): Promise<void> => {
+  const res = await http.post<ApiResponse<T>>(
+    `/companies/${companyId}/users/${targetId}/transfer-ownership`,
+  );
+  return res.data;
+};

@@ -6,9 +6,14 @@ import { useState } from 'react';
 type MembersTableProps = {
   members: Member[];
   onUpdateRole: (userId: string, role: Role) => Promise<void>;
+  onTransferOwnership: (userId: string) => Promise<void>;
 };
 
-const MembersTable = ({ members, onUpdateRole }: MembersTableProps) => {
+const MembersTable = ({
+  members,
+  onUpdateRole,
+  onTransferOwnership,
+}: MembersTableProps) => {
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<Member | null>(null);
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
@@ -72,7 +77,9 @@ const MembersTable = ({ members, onUpdateRole }: MembersTableProps) => {
       render: (_, record) => (
         <Space size="middle">
           <button onClick={() => showRoleModal(record)}>UpdateRole</button>
-          <button>Transfer</button>
+          <button onClick={() => onTransferOwnership(record.user_id)}>
+            Transfer
+          </button>
         </Space>
       ),
     },

@@ -1,11 +1,17 @@
 import { useEffect, useState } from 'react';
 import { useCompanyContext } from '../contexts/useCompanyContext';
-import { getMembers, updateRole, type Member } from '../services/members.api';
+import {
+  getMembers,
+  updateRole,
+  transferOwner,
+  type Member,
+} from '../services/members.api';
+import { getMyCompanies } from '../services/company.api';
 import MembersTable from '../components/members/MembersTable';
 import { message } from 'antd';
 
 const MembersPages = () => {
-  const { companies, currentCompanyId } = useCompanyContext();
+  const { companies, currentCompanyId, setCompanies } = useCompanyContext();
   const [members, setMembers] = useState<Member[]>([]);
 
   const currentCompany = companies.find(
@@ -36,6 +42,22 @@ const MembersPages = () => {
     }
   };
 
+  const handleTransferOwner = async (targetId: string) => {
+    if (!currentCompanyId) return;
+    try {
+      await transferOwner(currentCompanyId, targetId);
+      const members = await getMembers(currentCompanyId);
+      setMembers(members);
+
+      const companies = await getMyCompanies();
+      setCompanies(companies);
+
+      message.success('Update success');
+    } catch {
+      message.error('Update failed');
+    }
+  };
+
   return (
     <>
       <div>
@@ -43,6 +65,7 @@ const MembersPages = () => {
         <MembersTable
           members={members}
           onUpdateRole={handleUpdateRole}
+          onTransferOwnership={handleTransferOwner}
         ></MembersTable>
       </div>
     </>
