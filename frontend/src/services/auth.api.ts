@@ -5,6 +5,12 @@ export interface ApiResponse<T> {
   success: boolean;
   data: T;
 }
+export interface MePayload {
+  id: string;
+  username: string;
+  email: string;
+  created_at: string;
+}
 export interface LoginTokens {
   access_token: string;
   refresh_token: string;
@@ -58,6 +64,11 @@ export interface JoinCompanyResponse {
 // export const login = (payload: LoginPayload) => {
 //   return http.post<ApiResponse<LoginTokens>>('/auth/login', payload)
 // }
+
+export const getMe = () => {
+  return http.get<MePayload>('/auth/me');
+};
+
 export const login = (payload: LoginPayload) => {
   return http.post<LoginResponse>('/auth/login', payload);
 };

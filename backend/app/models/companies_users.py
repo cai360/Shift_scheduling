@@ -1,6 +1,4 @@
 from app.extensions import db
-from app.models import User
-from datetime import datetime
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy import text
 from .base import BaseModel
@@ -29,10 +27,17 @@ class CompanyUser(BaseModel):
     deleted_at = db.Column(db.DateTime(timezone=True), nullable=True)
 
     user = db.relationship(
-        User,
-        backref="company_memberships",
-        lazy="select"
+        "User",
+        back_populates="company_users",
+        lazy="selectin"
     )
+
+    company = db.relationship(
+        "Company",
+        back_populates="company_users",
+        lazy="selectin"
+    )
+
 
     __table_args__ = (
         db.CheckConstraint( "role IN ('owner', 'manager','employee')",name="ck_company_users_role"),

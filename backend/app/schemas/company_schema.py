@@ -20,4 +20,9 @@ class CompanyOutSchema(Schema):
     created_at = fields.DateTime()
     updated_at = fields.DateTime()
 
+class MyCompanyMembershipOutSchema(Schema):
+    company_id = fields.UUID(required=True)
+    company_name = fields.Str(required=True)
+    role = fields.Str(required=True)
+
 

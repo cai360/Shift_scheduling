@@ -7,8 +7,11 @@ import { login } from '../services/auth.api';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { validateLogin } from '../utils/validators';
+import { useAuthContext } from '../contexts/useAuthContext';
 
 const LoginPage = () => {
+  const { restoreUser } = useAuthContext();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -18,8 +21,8 @@ const LoginPage = () => {
   const handleLogin = async () => {
     try {
       setLoading(true);
-
       setError('');
+
       const errorMsg = validateLogin({ email, password });
       if (errorMsg) {
         setError(errorMsg);
@@ -33,8 +36,10 @@ const LoginPage = () => {
       });
 
       const { access_token, refresh_token } = res.data;
-      localStorage.setItem('token', access_token);
+      localStorage.setItem('access_token', access_token);
       localStorage.setItem('refresh_token', refresh_token);
+
+      await restoreUser();
 
       navigate('/home');
       message.success(`登入成功`);

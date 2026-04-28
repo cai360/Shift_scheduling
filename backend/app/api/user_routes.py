@@ -3,8 +3,9 @@ from app.utils.auth_decorators import jwt_required
 from marshmallow import ValidationError
 from app.extensions import db
 from app.schemas.user_schema import *
-from app.schemas.company_schema import CompanyOutSchema
+from app.schemas.company_schema import MyCompanyMembershipOutSchema
 from app.services.user_service import UserService
+from app.services.companyUser_service import CompanyUserService
 from app.utils.response import ok, error  
 
 bp = Blueprint("users", __name__, url_prefix="/users")
@@ -49,7 +50,10 @@ def update_password():
 # List companies where user belongs  for the current user
 @bp.get("/me/companies")
 @jwt_required
-def list_user_companies():
-    companies = UserService.list_companies_for_user(g.user_id)
-    return ok(CompanyOutSchema(many=True).dump(companies))
+def get_my_companies():
+    user_id = g.user_id
+
+    data = CompanyUserService.list_companies_for_user(user_id)
+
+    return ok(MyCompanyMembershipOutSchema(many=True).dump(data))
 
