@@ -14,7 +14,7 @@ export const getMembers = async (companyId: string): Promise<Member[]> => {
   const res = await http.get<ApiResponse<Member[]>>(
     `/companies/${companyId}/users`,
   );
-  return res.data;
+  return res.data.data;
 };
 
 export const updateRole = async (
@@ -26,15 +26,15 @@ export const updateRole = async (
     `/companies/${companyId}/users/${userId}/role`,
     { role },
   );
-  return res.data;
+  return res.data.data;
 };
 
 export const transferOwner = async (
   companyId: string,
   targetId: string,
-): Promise<void> => {
-  const res = await http.post<ApiResponse<T>>(
+): Promise<Member> => {
+  const res = await http.post<ApiResponse<Member>>(
     `/companies/${companyId}/users/${targetId}/transfer-ownership`,
   );
-  return res.data;
+  return res.data.data;
 };

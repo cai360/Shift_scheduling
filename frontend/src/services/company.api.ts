@@ -13,5 +13,5 @@ export const getMyCompanies = async (): Promise<MyCompany[]> => {
   const res = await http.get<ApiResponse<MyCompaniesResponse>>(
     '/users/me/companies',
   );
-  return res.data;
+  return res.data.data;
 };
