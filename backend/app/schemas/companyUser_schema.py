@@ -13,9 +13,6 @@ class CompanyUserOutSchema(Schema):
         return obj.user.email if obj.user else None
     
 
-class TransferOwnershipSchema(Schema):
-    target_user_id = fields.UUID(required=True)
-
 class UpdateRoleSchema(Schema):
     role = fields.String(
         required=True,

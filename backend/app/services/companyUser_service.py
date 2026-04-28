@@ -154,6 +154,7 @@ class CompanyUserService:
 
         try:
             actor.role = "manager"
+            db.session.flush()
             target.role = "owner"
             CompanyUserService.validate_single_owner(company_id)
 
