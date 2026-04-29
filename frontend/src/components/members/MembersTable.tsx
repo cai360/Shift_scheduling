@@ -2,17 +2,20 @@ import { Member, type Role } from '../../services/members.api';
 import { Table, Space, Modal, Radio, message } from 'antd';
 import type { TableColumnsType, TableProps } from 'antd';
 import { useState } from 'react';
+import styles from './MembersTable.module.css';
 
 type MembersTableProps = {
   members: Member[];
   onUpdateRole: (userId: string, role: Role) => Promise<void>;
   onTransferOwnership: (userId: string) => Promise<void>;
+  currentUserId?: string;
 };
 
 const MembersTable = ({
   members,
   onUpdateRole,
   onTransferOwnership,
+  currentUserId,
 }: MembersTableProps) => {
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<Member | null>(null);
@@ -32,13 +35,22 @@ const MembersTable = ({
       message.warning("can't update the same role");
       return;
     }
-    await onUpdateRole(selectedUser.user_id, selectedRole);
+    try {
+      await onUpdateRole(selectedUser.user_id, selectedRole);
+      resetRoleModal();
+    } catch {
+      message.error('Request fail');
+    }
+  };
+
+  const resetRoleModal = () => {
     setIsRoleModalOpen(false);
+    setSelectedRole(null);
     setSelectedUser(null);
   };
 
   const handleCancel = () => {
-    setIsRoleModalOpen(false);
+    resetRoleModal();
   };
 
   const onTableChange: TableProps<Member>['onChange'] = (
@@ -93,6 +105,9 @@ const MembersTable = ({
         dataSource={members}
         onChange={onTableChange}
         showSorterTooltip={{ target: 'sorter-icon' }}
+        rowClassName={(record) =>
+          record.user_id === currentUserId ? styles['current-user-row'] : ''
+        }
       />
       <Modal
         title="Basic Modal"
