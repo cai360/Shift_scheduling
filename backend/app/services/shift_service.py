@@ -100,11 +100,15 @@ class ShiftService:
             raise ValidationAppError("Duplicate shift slots detected in request.")
 
         # reject exact duplicate active slots already in DB
-        # TODO:  the range of DB duplicate querycan be narrower
+        min_candidate_start = min(start_at for start_at, _ in candidate_slots)
+        max_candidate_end = max(end_at for _, end_at in candidate_slots)
+
         existing_shifts = (
             Shift.query.filter(
                 Shift.company_id == company_id,
                 Shift.deleted_at.is_(None),
+                Shift.start_at < max_candidate_end,
+                Shift.end_at > min_candidate_start,
             ).all()
         )
 
@@ -190,28 +194,52 @@ class ShiftService:
         if len(shift_ids) != len(set(shift_ids)):
             raise ValidationAppError("shift_ids must be unique")
 
-        candidate_shifts = (
-            Shift.query.filter(
-                Shift.company_id == company_id,
-                Shift.id.in_(shift_ids),
-                Shift.published_at.is_(None),
-                Shift.deleted_at.is_(None),
-            ).all()
-        )
+        # ---- validation: invalid / already published ----
+        shifts = Shift.query.filter(
+            Shift.id.in_(shift_ids)
+        ).all()
 
-        if len(candidate_shifts) != len(shift_ids):
-            raise ValidationAppError(message=
-               "Some shift_ids are invalid for publishing."
+        found_by_id = {shift.id: shift for shift in shifts}
+
+        not_found_ids = [
+            shift_id for shift_id in shift_ids
+            if shift_id not in found_by_id
+        ]
+
+        invalid_shift_ids = []
+        already_published_ids = []
+        candidate_shifts = []
+
+        for shift in shifts:
+            if shift.company_id != company_id or shift.deleted_at is not None:
+                invalid_shift_ids.append(shift.id)
+            elif shift.published_at is not None:
+                already_published_ids.append(shift.id)
+            else:
+                candidate_shifts.append(shift)
+
+        invalid_shift_ids = sorted(set(not_found_ids + invalid_shift_ids))
+        already_published_ids = sorted(already_published_ids)
+
+        if invalid_shift_ids:
+            raise ValidationAppError(
+                f"Some shift_ids are invalid for publishing. shift_ids={invalid_shift_ids}"
             )
 
+        if already_published_ids:
+            raise ConflictError(
+                f"Some shifts are already published. shift_ids={already_published_ids}"
+            )
+
+        # ---- validation: overlap ----
         overlap_candidate_ids = ShiftService._get_overlapping_candidate_shifts(
             candidate_shifts
         )
         if overlap_candidate_ids:
-            raise ConflictError(message=
+            raise ConflictError(
                 f"Cannot publish shifts: candidate shifts overlap. shift_ids={overlap_candidate_ids}"
             )
-        
+
         overlap_with_published_ids = (
             ShiftService._get_overlapping_published_shifts(
                 company_id=company_id,
@@ -220,10 +248,10 @@ class ShiftService:
         )
 
         if overlap_with_published_ids:
-            raise ConflictError(message=
+            raise ConflictError(
                 f"Cannot publish shifts: overlap with existing published shifts. shift_ids={overlap_with_published_ids}"
             )
-
+        # ---- publish ----
         now = datetime.now(tz=UTC_TZ)
 
         updated_count = (
@@ -244,7 +272,7 @@ class ShiftService:
             "requested": len(shift_ids),
             "published": updated_count,
         }
-        
+
     @staticmethod
     def _get_overlapping_published_shifts(*, company_id, shift_ids):
         """
@@ -276,14 +304,14 @@ class ShiftService:
             .all()
         )
 
-        return [row[0] for row in rows]
+        return sorted([row[0] for row in rows])
     
     @staticmethod
     def update_shift(*, company_id, shift_id, user_id, data):
         """
         MVP:
         - Only draft shifts can be updated
-        - Time update recomputes start_at / end_at using BUSINESS_TZ
+        - start_at / end_at are updated directly from submitted datetimes
         - overlap is not validated here; it is enforced at publish time
         """
         shift = Shift.query.filter(
@@ -302,30 +330,21 @@ class ShiftService:
         if shift.published_at is not None:
             raise ConflictError(message="Cannot update a published shift.")
 
-        if "start_time" in data or "end_time" in data:
-            local_date = shift.start_at.astimezone(BUSINESS_TZ).date()
+        new_start_at = data.get("start_time", shift.start_at)
+        new_end_at = data.get("end_time", shift.end_at)
 
-            start_time = data.get(
-                "start_time",
-                shift.start_at.astimezone(BUSINESS_TZ).time()
-            )
-            end_time = data.get(
-                "end_time",
-                shift.end_at.astimezone(BUSINESS_TZ).time()
-            )
+        new_start_at = new_start_at.astimezone(UTC_TZ)
+        new_end_at = new_end_at.astimezone(UTC_TZ)
 
-            local_start = datetime.combine(
-                local_date, start_time, tzinfo=BUSINESS_TZ
-            )
-            local_end = datetime.combine(
-                local_date, end_time, tzinfo=BUSINESS_TZ
-            )
+        if new_start_at >= new_end_at:
+            raise ValidationAppError("end_time must be later than start_time.")
 
-            if end_time <= start_time:
-                local_end += timedelta(days=1)
+        now = datetime.now(tz=UTC_TZ)
+        if new_start_at <= now:
+            raise ValidationAppError("Cannot update shift to the past.")
 
-            shift.start_at = local_start.astimezone(UTC_TZ)
-            shift.end_at = local_end.astimezone(UTC_TZ)
+        shift.start_at = new_start_at
+        shift.end_at = new_end_at
 
         if "capacity" in data:
             shift.capacity = data["capacity"]
@@ -370,7 +389,7 @@ class ShiftService:
                 overlap_ids.add(current_shift.id)
                 overlap_ids.add(next_shift.id)
 
-        return list(overlap_ids)
+        return sorted(overlap_ids)
 
 
 
