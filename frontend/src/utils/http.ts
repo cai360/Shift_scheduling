@@ -14,6 +14,16 @@ const http = axios.create({
 });
 
 let refreshPromise: Promise<string> | null = null;
+let onUnauthorized: (() => void) | null = null;
+
+export const setUnauthorizedHandler = (handler: () => void) => {
+  onUnauthorized = handler;
+};
+
+const clearAuthTokens = () => {
+  localStorage.removeItem('access_token');
+  localStorage.removeItem('refresh_token');
+};
 
 const refreshAccessToken = async (): Promise<string> => {
   const refreshToken = localStorage.getItem('refresh_token');
@@ -83,9 +93,8 @@ http.interceptors.response.use(
 
         return http(originalRequest);
       } catch (refreshError) {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        window.location.href = '/login';
+        clearAuthTokens();
+        onUnauthorized?.();
         return Promise.reject(refreshError);
       }
     }
