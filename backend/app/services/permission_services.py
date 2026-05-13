@@ -32,3 +32,26 @@ class PermissionService:
             allowed_roles=("owner",)
         )
     
+    @staticmethod
+    def can_review(user_id, leave, membership):
+        return leave.reviewed_by == user_id
+
+    @staticmethod
+    def validate_reviewer_assignment(membership, reviewer_membership):
+        role = membership.role
+        reviewer_role = reviewer_membership.role
+
+        if role == "employee":
+            if reviewer_role not in ("manager", "owner"):
+                raise Forbidden("Employee can only assign manager or owner")
+
+        elif role == "manager":
+            if reviewer_role != "owner":
+                raise Forbidden("Manager can only assign owner")
+
+        elif role == "owner":
+            return
+
+        else:
+            raise Forbidden("Invalid role")
+    
