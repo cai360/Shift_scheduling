@@ -31,7 +31,31 @@ class PermissionService:
             user_id=user_id,
             allowed_roles=("owner",)
         )
-    
+    @staticmethod
+    def can_view_leave(company_id, user_id, leave):
+
+        if leave.user_id == user_id:
+            return True
+
+        PermissionService.require_roles(
+            company_id=company_id,
+            user_id=user_id,
+            allowed_roles=("manager", "owner")
+        )
+
+        return True
+
+    @staticmethod
+    def can_view_all_leaves(company_id, user_id):
+
+        PermissionService.require_roles(
+            company_id=company_id,
+            user_id=user_id,
+            allowed_roles=("manager", "owner")
+        )
+
+        return True
+
     @staticmethod
     def can_review(user_id, leave, membership):
         return leave.reviewed_by == user_id

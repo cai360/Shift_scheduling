@@ -82,15 +82,3 @@ def review_leave(leave_id, company_id):
         data=data
     )
     return ok(LeaveOutSchema().dump(leave))
-
-# @bp.post("/companies/<company_id>/leaves/<uuid:leave_id>")
-# @jwt_required
-# def withdrawn_leave(leave_id, company_id):
-#     data = LeaveWithdrawnSchema().load(request.json or {})
-#     leave = LeaveService.withdrawn_leave(
-#         leave_id=leave_id,
-#         user_id=g.user_id,
-#         company_id=company_id,
-#         data=data
-#     )
-#     return ok(LeaveOutSchema().dump(leave))
