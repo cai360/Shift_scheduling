@@ -1,13 +1,12 @@
 import http from '../utils/http';
 import { ApiResponse } from './auth.api';
-
-export type Role = 'owner' | 'manager' | 'employee';
+import type { CompanyRole } from '../types/company';
 
 export interface Member {
   user_id: string;
   username: string;
   email: string;
-  role: Role;
+  role: CompanyRole;
 }
 
 export const getMembers = async (companyId: string): Promise<Member[]> => {
@@ -20,7 +19,7 @@ export const getMembers = async (companyId: string): Promise<Member[]> => {
 export const updateRole = async (
   companyId: string,
   userId: string,
-  role: string,
+  role: CompanyRole,
 ): Promise<Member> => {
   const res = await http.patch<ApiResponse<Member>>(
     `/companies/${companyId}/users/${userId}/role`,

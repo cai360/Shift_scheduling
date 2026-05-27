@@ -5,12 +5,12 @@ import {
   updateRole,
   transferOwner,
   type Member,
-  type Role,
 } from '../services/members.api';
 import { getMyCompanies } from '../services/company.api';
 import MembersTable from '../components/members/MembersTable';
 import { message } from 'antd';
 import { useAuthContext } from '../contexts/useAuthContext';
+import type { CompanyRole } from '../types/company';
 
 const MembersPages = () => {
   const { companies, currentCompanyId, setCompanies } = useCompanyContext();
@@ -33,7 +33,7 @@ const MembersPages = () => {
     fetchMembers();
   }, [currentCompanyId]);
 
-  const handleUpdateRole = async (userId: string, role: Role) => {
+  const handleUpdateRole = async (userId: string, role: CompanyRole) => {
     if (!currentCompanyId) return;
     try {
       await updateRole(currentCompanyId, userId, role);
@@ -70,6 +70,7 @@ const MembersPages = () => {
           onUpdateRole={handleUpdateRole}
           onTransferOwnership={handleTransferOwner}
           currentUserId={user?.id}
+          currentUserRole={currentCompany?.role}
         ></MembersTable>
       </div>
     </>
