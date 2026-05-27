@@ -24,7 +24,7 @@ export default defineConfig([
     },
 
     rules: {
-      'prettier/prettier': 'warnning',
+      'prettier/prettier': 'warn',
     },
 
     languageOptions: {
