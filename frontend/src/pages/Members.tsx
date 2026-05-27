@@ -11,6 +11,7 @@ import MembersTable from '../components/members/MembersTable';
 import { message } from 'antd';
 import { useAuthContext } from '../contexts/useAuthContext';
 import type { CompanyRole } from '../types/company';
+import { Spin } from 'antd';
 
 const MembersPages = () => {
   const { companies, currentCompanyId, setCompanies } = useCompanyContext();
@@ -60,6 +61,10 @@ const MembersPages = () => {
       message.error('Update failed');
     }
   };
+
+  if (!user || !currentCompany?.role) {
+    return <Spin />;
+  }
 
   return (
     <>
