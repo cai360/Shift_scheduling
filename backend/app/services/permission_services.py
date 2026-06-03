@@ -31,6 +31,14 @@ class PermissionService:
             user_id=user_id,
             allowed_roles=("owner",)
         )
+
+    @staticmethod
+    def require_active_member(*, company_id, user_id):
+        return PermissionService.require_roles(
+            company_id=company_id,
+            user_id=user_id,
+            allowed_roles=("employee", "manager", "owner")
+        )
     @staticmethod
     def can_view_leave(company_id, user_id, leave):
 
@@ -58,24 +66,29 @@ class PermissionService:
 
     @staticmethod
     def can_review(user_id, leave, membership):
-        return leave.reviewed_by == user_id
+        # Current rule:
+        # only the assigned reviewer can review a leave request.
+        
+        # TODO:
+        # Support additional review permissions such as
+        # managers, owners, or delegated reviewers.
+        return leave.assigned_reviewer_id == user_id
 
     @staticmethod
     def validate_reviewer_assignment(membership, reviewer_membership):
         role = membership.role
         reviewer_role = reviewer_membership.role
-
         if role == "employee":
             if reviewer_role not in ("manager", "owner"):
-                raise Forbidden("Employee can only assign manager or owner")
+                raise PermissionDeniedError(message="Employee can only assign manager or owner")
 
         elif role == "manager":
             if reviewer_role != "owner":
-                raise Forbidden("Manager can only assign owner")
+                raise PermissionDeniedError(message="Manager can only assign owner")
 
         elif role == "owner":
             return
 
         else:
-            raise Forbidden("Invalid role")
+            raise PermissionDeniedError(message="Invalid role")
     

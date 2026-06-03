@@ -23,12 +23,18 @@ class Leave(BaseModel):
     end_at = db.Column(db.DateTime(timezone=True), nullable=False)
 
     # "sick", "annual", "personal"
-    type = db.Column(db.String(32), nullable=False)
+    leave_type = db.Column("type", db.String(32), nullable=False)
 
     reason = db.Column(db.Text, nullable=True)
     reject_reason = db.Column(db.Text, nullable=True)
-    # TODO: Currently supports a single approver.
+    # TODO: 
+    # Currently supports a single approver.
     # Multi-level or multi-approver workflows can be considered in the future if needed.
+    assigned_reviewer_id = db.Column(
+        UUID(as_uuid=True),
+        db.ForeignKey('users.id', ondelete='SET NULL'),
+        nullable=True
+    )
     reviewed_by = db.Column(
         UUID(as_uuid=True),
         db.ForeignKey('users.id', ondelete='SET NULL'),
@@ -58,14 +64,14 @@ class Leave(BaseModel):
         ),
         CheckConstraint(
             """
-            (status IN ('approved', 'rejected') AND reviewed_at IS NOT NULL)
+            (status IN ('approved', 'rejected') AND reviewed_at IS NOT NULL AND reviewed_by IS NOT NULL)
             OR
-            (status IN ('pending', 'withdrawn') AND reviewed_at IS NULL)
+            (status IN ('pending', 'withdrawn') AND reviewed_at IS NULL AND reviewed_by IS NULL)
             """,
             name="ck_approval_consistency"
         ),
         CheckConstraint(
-            "start_at <= end_at",
+            "start_at < end_at",
             name="ck_leave_range_valid"
         ),
     )

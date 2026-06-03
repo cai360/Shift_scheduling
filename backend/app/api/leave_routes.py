@@ -71,7 +71,7 @@ def update_leave(leave_id, company_id):
     )
     return ok(LeaveOutSchema().dump(leave))
 
-@bp.post("/companies/<company_id>/leaves/<uuid:leave_id>")
+@bp.post("/companies/<company_id>/leaves/<uuid:leave_id>/review")
 @jwt_required
 def review_leave(leave_id, company_id):
     data = LeaveReviewSchema().load(request.json or {})
@@ -80,5 +80,15 @@ def review_leave(leave_id, company_id):
         user_id=g.user_id,
         company_id=company_id,
         data=data
+    )
+    return ok(LeaveOutSchema().dump(leave))
+
+@bp.post("/companies/<company_id>/leaves/<uuid:leave_id>/withdraw")
+@jwt_required
+def withdraw_leave(leave_id, company_id):
+    leave = LeaveService.withdraw_leave(
+        leave_id=leave_id,
+        user_id=g.user_id,
+        company_id=company_id,
     )
     return ok(LeaveOutSchema().dump(leave))

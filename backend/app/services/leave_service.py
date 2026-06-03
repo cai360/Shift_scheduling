@@ -1,35 +1,28 @@
 from app.models import Leave
-from app.models import ShiftAssignment
-from app.models import Shift
 from app.services.companyUser_service import CompanyUserService
 from app.services.datetimeRange_service import DateTimeRangeService
 from app.services.permission_services import PermissionService
 from app.domain.resolver import ReviewerResolver
+from app.errors.error_base import NotFoundError, ValidationAppError, PermissionDeniedError
 
 from app.extensions import db
 from datetime import datetime
-
-from werkzeug.exceptions import Forbidden, NotFound
-
 from app.config import UTC_TZ
-from uuid import UUID
-
 
 class LeaveService:
 
   @staticmethod
   def create_leave(data, user_id, company_id):
-    membership = PermissionService.require_roles(
+    membership = PermissionService.require_active_member(
       company_id=company_id,
-      user_id=user_id,
-      allowed_roles=("employee", "manager", "owner")
+      user_id=user_id
     )
     
-    reviewed_by = LeaveService.resolve_and_validate_reviewer(
+    assigned_reviewer_id = LeaveService.resolve_and_validate_reviewer(
       company_id=company_id,
       user_id=user_id,
       membership=membership,
-      input_reviewer=data.get("reviewed_by")
+      input_reviewer=data.get("assigned_reviewer_id")
     )
     
     start_at = data["start_at"].astimezone(UTC_TZ)
@@ -43,9 +36,9 @@ class LeaveService:
       company_id = company_id,
       start_at = start_at,
       end_at = end_at,
-      type = data['type'],
+      leave_type = data['leave_type'],
       reason = data['reason'],
-      reviewed_by = reviewed_by
+      assigned_reviewer_id = assigned_reviewer_id
     )
     db.session.add(leave)
     db.session.commit()
@@ -54,10 +47,9 @@ class LeaveService:
   @staticmethod
   def list_leaves(user_id, company_id, scope="self"):
 
-    PermissionService.require_roles(
+    PermissionService.require_active_member(
       company_id=company_id,
-      user_id=user_id,
-      allowed_roles=("employee", "manager", "owner")
+      user_id=user_id
     )
 
     query = (
@@ -72,7 +64,7 @@ class LeaveService:
       PermissionService.can_view_all_leaves(company_id=company_id, user_id=user_id)
       return query.all()
     
-    raise ValueError("Invalid scope.")
+    raise ValidationAppError("Invalid scope.")
   
   @staticmethod
   def get_leave(leave_id, company_id, user_id):
@@ -83,7 +75,7 @@ class LeaveService:
     ).first()
 
     if not leave:
-      raise NotFound("Leave does not exist.")
+      raise NotFoundError("Leave does not exist.")
 
     PermissionService.can_view_leave(
       company_id=company_id, 
@@ -101,22 +93,21 @@ class LeaveService:
       LeaveService.validate_creator(leave, user_id)
 
       if leave.status != "pending":
-        raise Forbidden("Only pending leave can be updated")
+        raise PermissionDeniedError(message="Only pending leave can be updated")
 
       if leave.reviewed_at:
-        raise Forbidden("Leave has already been reviewed.")
+        raise PermissionDeniedError(message="Leave has already been reviewed.")
 
-      membership = PermissionService.require_roles(
+      membership = PermissionService.require_active_member(
         company_id=company_id,
-        user_id=user_id,
-        allowed_roles=("employee", "manager", "owner")
+        user_id=user_id
       )
 
-      reviewed_by = LeaveService.resolve_and_validate_reviewer(
+      assigned_reviewer_id = LeaveService.resolve_and_validate_reviewer(
         company_id=company_id,
         user_id=user_id,
         membership=membership,
-        input_reviewer=data.get("reviewed_by")
+        input_reviewer=data.get("assigned_reviewer_id")
       )
 
       start_at = data["start_at"].astimezone(UTC_TZ)
@@ -127,9 +118,9 @@ class LeaveService:
 
       leave.start_at = start_at
       leave.end_at = end_at
-      leave.type = data["type"]
+      leave.leave_type = data["leave_type"]
       leave.reason = data["reason"]
-      leave.reviewed_by = reviewed_by
+      leave.assigned_reviewer_id = assigned_reviewer_id
 
       db.session.commit()
       return leave
@@ -142,29 +133,29 @@ class LeaveService:
     try:
       leave = LeaveService.get_leave(leave_id, company_id, user_id)
 
-      membership = PermissionService.require_roles(
+      membership = PermissionService.require_active_member(
         company_id=company_id,
-        user_id=user_id,
-        allowed_roles=("employee", "manager", "owner")
+        user_id=user_id
       )
-      if not membership:
-        raise Forbidden("Not a company member.")
       
       if not PermissionService.can_review(user_id, leave, membership):
-        raise Forbidden("Insufficient permissions")
+        raise PermissionDeniedError(message="Insufficient permissions")
       
       if leave.status != "pending":
-        raise Forbidden("Only pending leave can be reviewed.")
+        raise PermissionDeniedError(message="Only pending leave can be reviewed.")
       
-      if data["status"] not in ("approved", "rejected"):
-        raise ValueError("Invalid review status")
+      if data.get("status") not in ("approved", "rejected"):
+        raise ValidationAppError("Invalid review status")
 
-
-      leave.status = data["status"]
-      leave.reject_reason = data["reject_reason"]
+      leave.status = data.get("status")
+      leave.reject_reason = data.get("reject_reason")
 
       LeaveService.validate_reject_reason(data)
       
+      # TODO: Handle impacted shift assignments after leave approval.
+      # Possible follow-up actions include reassignment workflows,
+      # notifications, or marking affected assignments for review.
+      leave.reviewed_by = user_id
       leave.reviewed_at = datetime.now(tz=UTC_TZ)
       db.session.commit()
       return leave
@@ -173,15 +164,16 @@ class LeaveService:
       raise
   
   @staticmethod
-  def delete_leave(leave_id, user_id, company_id):
+  def withdraw_leave(leave_id, user_id, company_id):
     try: 
       leave = LeaveService.get_leave(leave_id, company_id, user_id)
       LeaveService.validate_creator(leave, user_id)
+      if leave.status == "withdrawn":
+        raise ValidationAppError(message="Leave has already been withdrawn.")
       
       if leave.status != "pending":
-        raise Forbidden("Only pending leave can be deleted.")
+        raise PermissionDeniedError(message="Only pending leave can be withdrawn.")
 
-      leave.deleted_at = datetime.now(tz=UTC_TZ)
       leave.status = "withdrawn"
       db.session.commit()
       return True
@@ -192,7 +184,7 @@ class LeaveService:
   @staticmethod
   def validate_time_range(start_at, end_at):
     if start_at >= end_at:
-      raise ValueError("start_at must be earlier than end_at.")
+      raise ValidationAppError("start_at must be earlier than end_at.")
   
   @staticmethod
   def validate_no_time_conflicts(user_id, company_id, start_at, end_at, exclude_id=None):
@@ -204,30 +196,30 @@ class LeaveService:
       end_at=end_at,
       exclude_id=exclude_id
     ):
-      raise ValueError("Time range overlaps with existing Leave.")
+      raise ValidationAppError("Time range overlaps with existing Leave.")
   @staticmethod
   def validate_reject_reason(data):
     if data.get("status") == "rejected":
       if not data.get("reject_reason"):
-        raise ValueError("reject_reason is required when rejected")
+        raise ValidationAppError("reject_reason is required when rejected")
     else:
-      if data.get("reject_reason") != "":
-        raise ValueError("reject_reason must be null when not rejected")
+      if data.get("reject_reason") not in (None, ""):
+        raise ValidationAppError("reject_reason must be null when not rejected")
 
   @staticmethod
   def validate_creator(leave, user_id):
     if leave.user_id != user_id:
-      raise Forbidden("Insufficient permissions")
+      raise PermissionDeniedError(message="Insufficient permissions")
 
   @staticmethod
   def resolve_and_validate_reviewer(*, company_id, user_id, membership, input_reviewer):
-    reviewed_by = ReviewerResolver.resolve(user_id=user_id, input_reviewer=input_reviewer)
+    assigned_reviewer_id = ReviewerResolver.resolve(user_id=user_id, input_reviewer=input_reviewer)
 
-    reviewer_membership = CompanyUserService.get_active_membership(company_id=company_id, user_id=reviewed_by)
+    reviewer_membership = CompanyUserService.get_active_membership(company_id=company_id, user_id=assigned_reviewer_id)
 
     if not reviewer_membership:
-      raise Forbidden("Reviewer is not a valid company member")
+      raise PermissionDeniedError(message="Reviewer is not a valid company member")
 
     PermissionService.validate_reviewer_assignment(membership, reviewer_membership)
 
-    return reviewed_by
+    return assigned_reviewer_id
