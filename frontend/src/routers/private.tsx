@@ -17,7 +17,7 @@ const PrivateRoutes = [
       { path: '/home', element: <HomePage /> },
       { path: '/new-company', element: <NewCompanyPage /> },
       { path: '/members', element: <MembersPage /> },
-      { path: '/shift-management', element: <ShiftManagementPage/>}
+      { path: '/shift-management', element: <ShiftManagementPage /> },
     ],
   },
 ];

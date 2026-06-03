@@ -6,7 +6,8 @@ import type { EventInput } from '@fullcalendar/core';
 
 type Props = {
   shifts: Shift[];
-}
+};
+
 const ShiftCalendarView = ({ shifts }: Props) => {
   const events: EventInput[] = useMemo(() => {
     return shifts.map((shift) => ({

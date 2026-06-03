@@ -1,4 +1,5 @@
 import http from '../utils/http';
+import { ApiResponse } from './auth.api';
 
 export type ShiftStatus = 'draft' | 'published';
 
@@ -31,9 +32,9 @@ export const getShifts = async (
   companyId: string,
   params?: ShiftQueryParams,
 ): Promise<ShiftsResponse> => {
-  const response = await http.get<ShiftsResponse>(
+  const response = await http.get<ApiResponse<ShiftsResponse>>(
     `/companies/${companyId}/shifts`,
     { params },
   );
-  return response.data;
+  return response.data.data;
 };
