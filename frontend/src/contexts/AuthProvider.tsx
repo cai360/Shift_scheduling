@@ -8,7 +8,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const restoreUser = async () => {
     const meRes = await getMe();
-    setUser(meRes.data);
+    setUser(meRes);
   };
 
   useEffect(() => {

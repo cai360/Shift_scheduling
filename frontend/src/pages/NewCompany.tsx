@@ -34,7 +34,7 @@ const NewCompanyPage = () => {
         description,
       });
 
-      message.success(`公司建立成功：${res.data.name}`);
+      message.success(`公司建立成功：${res.name}`);
       navigate('/home');
     } catch (err) {
       message.error(`公司建立失敗 ${err}`);
@@ -51,7 +51,7 @@ const NewCompanyPage = () => {
 
       const res = await joinCompany(companyId);
 
-      message.success(`加入公司成功：${res.data.company_id}`);
+      message.success(`加入公司成功：${res.company_id}`);
       navigate('/home');
     } catch (err) {
       message.error(`加入公司失敗 ${err}`);

@@ -65,7 +65,7 @@ http.interceptors.request.use(
 http.interceptors.response.use(
   (response) => {
     // only handle success
-    return response.data;
+    return response;
   },
   async (error) => {
     const originalRequest = error.config as RetryableRequestConfig | undefined;

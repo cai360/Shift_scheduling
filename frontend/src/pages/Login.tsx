@@ -35,7 +35,7 @@ const LoginPage = () => {
         password,
       });
 
-      const { access_token, refresh_token } = res.data;
+      const { access_token, refresh_token } = res;
       localStorage.setItem('access_token', access_token);
       localStorage.setItem('refresh_token', refresh_token);
 

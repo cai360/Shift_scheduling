@@ -6,12 +6,6 @@ from sqlalchemy.sql import func
 class ShiftTakeover(BaseModel):
     __tablename__ = 'shift_takeovers'
 
-    company_id = db.Column(
-        UUID(as_uuid=True),
-        db.ForeignKey('companies.id', ondelete='CASCADE'),
-        nullable=False
-    )
-
     assignment_id = db.Column(
         UUID(as_uuid=True),
         db.ForeignKey('shift_assignments.id', ondelete='CASCADE'),

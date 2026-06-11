@@ -65,22 +65,38 @@ export interface JoinCompanyResponse {
 //   return http.post<ApiResponse<LoginTokens>>('/auth/login', payload)
 // }
 
-export const getMe = () => {
-  return http.get<MePayload>('/auth/me');
+export const getMe = async () => {
+  const res = await http.get<ApiResponse<MePayload>>('/auth/me');
+  return res.data.data;
 };
 
-export const login = (payload: LoginPayload) => {
-  return http.post<LoginResponse>('/auth/login', payload);
+export const login = async (payload: LoginPayload) => {
+  const res = await http.post<ApiResponse<LoginResponse>>(
+    '/auth/login',
+    payload,
+  );
+  return res.data.data;
 };
 
-export const register = (payload: RegisterPayload) => {
-  return http.post<RegisterResponse>('/auth/register', payload);
+export const register = async (payload: RegisterPayload) => {
+  const res = await http.post<ApiResponse<RegisterResponse>>(
+    '/auth/register',
+    payload,
+  );
+  return res.data.data;
 };
 
-export const createCompany = (payload: CreateCompanyPayload) => {
-  return http.post<CreateCompanyResponse>('/companies', payload);
+export const createCompany = async (payload: CreateCompanyPayload) => {
+  const res = await http.post<ApiResponse<CreateCompanyResponse>>(
+    '/companies',
+    payload,
+  );
+  return res.data.data;
 };
 
-export const joinCompany = (companyId: string) => {
-  return http.post<JoinCompanyResponse>(`/companies/${companyId}/join`);
+export const joinCompany = async (companyId: string) => {
+  const res = await http.post<ApiResponse<JoinCompanyResponse>>(
+    `/companies/${companyId}/join`,
+  );
+  return res.data.data;
 };

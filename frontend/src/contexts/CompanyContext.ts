@@ -1,9 +1,10 @@
 import { createContext } from 'react';
+import { CompanyRole } from '../types/company';
 
 export type MyCompany = {
   company_id: string;
   company_name: string;
-  role: string;
+  role: CompanyRole;
 };
 
 export type CompanyContextType = {

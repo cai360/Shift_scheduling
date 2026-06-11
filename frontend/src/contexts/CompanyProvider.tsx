@@ -45,7 +45,7 @@ export const CompanyProvider = ({
 
       try {
         const companyList = await getMyCompanies();
-        const nextCompanies = companyList.data;
+        const nextCompanies = companyList;
 
         setCompanies(nextCompanies);
 

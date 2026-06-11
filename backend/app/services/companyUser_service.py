@@ -188,6 +188,38 @@ class CompanyUserService:
             raise RuntimeError(
             f"[Invariant Violation] company {company_id} has {owner_count} owners"
             )
+        
+    @staticmethod
+    def update_role(company_id, actor_user_id, target_user_id, role):
+        if role not in ("manager", "employee"):
+            raise ValueError("Role must be either manager or employee")
+
+        actor = CompanyUserService.get_active_membership(
+            company_id=company_id,
+            user_id=actor_user_id,
+        )
+        if not actor:
+            raise PermissionError("Actor is not a company member")
+
+        if actor.role != "owner":
+            raise PermissionError("Only owner can update member roles")
+
+        target = CompanyUserService.get_active_membership(
+            company_id=company_id,
+            user_id=target_user_id,
+        )
+        if not target:
+            raise ValueError("Target user is not a company member")
+
+        if actor_user_id == target_user_id:
+            raise ValueError("Owner cannot update their own role")
+
+        if target.role == "owner":
+            raise ValueError("Owner role cannot be updated through update_role")
+
+        target.role = role
+        db.session.commit()
+        return target
 
     
 
