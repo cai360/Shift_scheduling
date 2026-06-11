@@ -1,12 +1,12 @@
-import { CompanyRoles, type CompanyRole,  } from '../types/company';
+import { CompanyRoles, type CompanyRole } from '../types/company';
 
 export const MemberPermissions = {
   VIEW_ACTIONS: 'member.viewActions',
   UPDATE_ROLE: 'member.updateRole',
   TRANSFER_OWNERSHIP: 'member.transferOWnership',
-} as const; 
+} as const;
 
-export type MemberPermission = 
+export type MemberPermission =
   (typeof MemberPermissions)[keyof typeof MemberPermissions];
 
 const rolePermissions: Record<CompanyRole, MemberPermission[]> = {
@@ -16,10 +16,7 @@ const rolePermissions: Record<CompanyRole, MemberPermission[]> = {
     MemberPermissions.TRANSFER_OWNERSHIP,
   ],
 
-  [CompanyRoles.MANAGER]: [
-    MemberPermissions.VIEW_ACTIONS,
-    MemberPermissions.UPDATE_ROLE,
-  ],
+  [CompanyRoles.MANAGER]: [],
 
   [CompanyRoles.EMPLOYEE]: [],
 };
@@ -30,4 +27,4 @@ export const hasMemberPermission = (
 ) => {
   if (!role) return false;
   return rolePermissions[role].includes(permission) ?? false;
-}
+};

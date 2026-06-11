@@ -1,10 +1,13 @@
-import { Member} from '../../services/members.api';
-import { Table, Space, Modal, Radio, message, Popconfirm} from 'antd';
+import { Member } from '../../services/members.api';
+import { Table, Space, Modal, Radio, message, Popconfirm } from 'antd';
 import type { TableColumnsType, TableProps } from 'antd';
 import { useState } from 'react';
 import styles from './MembersTable.module.css';
 import type { CompanyRole } from '../../types/company';
-import { hasMemberPermission, MemberPermissions } from '../../permissions/companyPermissions';
+import {
+  hasMemberPermission,
+  MemberPermissions,
+} from '../../permissions/companyPermissions';
 
 type MembersTableProps = {
   members: Member[];
@@ -103,36 +106,32 @@ const MembersTable = ({
       dataIndex: 'email',
     },
     {
+      title: 'Action',
+      key: 'operation',
 
-  title: 'Action',
-
-  key: 'operation',
-
-  render: (_, record) => {
-    if (!canViewActions) return null;
-    return (
-      <Space size="middle">
-        {canUpdateRole && (
-          <button onClick={() => showRoleModal(record)}>
-            UpdateRole
-          </button>
-        )}
-        {canTransferOwnership && record.user_id !== currentUserId && (
-          <Popconfirm
-            title="Transfer ownership"
-            description="This will transfer company ownership to this member."
-            okText="Transfer"
-            cancelText="Cancel"
-            okButtonProps={{ danger: true }}
-            onConfirm={() => onTransferOwnership(record.user_id)}
-          >
-            <button>Transfer</button>
-          </Popconfirm>
-        )}
-      </Space>
-    );
-  },
-}
+      render: (_, record) => {
+        if (!canViewActions) return null;
+        return (
+          <Space size="middle">
+            {canUpdateRole && (
+              <button onClick={() => showRoleModal(record)}>UpdateRole</button>
+            )}
+            {canTransferOwnership && record.user_id !== currentUserId && (
+              <Popconfirm
+                title="Transfer ownership"
+                description="This will transfer company ownership to this member."
+                okText="Transfer"
+                cancelText="Cancel"
+                okButtonProps={{ danger: true }}
+                onConfirm={() => onTransferOwnership(record.user_id)}
+              >
+                <button>Transfer</button>
+              </Popconfirm>
+            )}
+          </Space>
+        );
+      },
+    },
   ];
 
   return (
