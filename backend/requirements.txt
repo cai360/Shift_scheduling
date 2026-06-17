@@ -44,4 +44,4 @@ pytest-flask==1.3.0
 # Optional utilities
 ############################################
 requests==2.32.3   
-python-dateutil==26.0
+python-dateutil==2.9.0
