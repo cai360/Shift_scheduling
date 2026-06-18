@@ -8,7 +8,7 @@
     "jsx": "react-jsx",
 
     /* === environment === */
-    "types": ["vite/client", "node"],
+    "types": ["vite/client", "node", "vitest/globals"],
 
     /* === Strict and safety === */
     "strict": true,

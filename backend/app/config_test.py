@@ -4,8 +4,9 @@ from dotenv import load_dotenv
 load_dotenv()  
 class TestConfig:
     TESTING = True
-    # Use the same database as production but with transaction rollback for isolation
-    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL")
+    SQLALCHEMY_DATABASE_URI = os.getenv("TEST_DATABASE_URL", "sqlite:///:memory:")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    # Disable CSRF for testing
+    JWT_SECRET = os.getenv("JWT_SECRET", "test-jwt-secret")
+    JWT_ACCESS_EXPIRES_MINUTES = 15
+    JWT_REFRESH_EXPIRES_DAYS = 7
     WTF_CSRF_ENABLED = False
