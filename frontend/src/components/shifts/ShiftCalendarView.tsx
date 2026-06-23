@@ -9,6 +9,10 @@ type Props = {
   onRangeChange: (from: string, to: string) => void;
 };
 
+const toDateOnly = (date: Date) => {
+  return date.toLocaleDateString('en-CA');
+};
+
 const ShiftCalendarView = ({ shifts, onRangeChange }: Props) => {
   const events: EventInput[] = useMemo(() => {
     return shifts.map((shift) => ({
@@ -72,7 +76,7 @@ const ShiftCalendarView = ({ shifts, onRangeChange }: Props) => {
       slotMinTime={calendarRange.slotMinTime}
       slotMaxTime={calendarRange.slotMaxTime}
       datesSet={(arg) => {
-        onRangeChange(arg.start.toISOString(), arg.end.toISOString());
+        onRangeChange(toDateOnly(arg.start), toDateOnly(arg.end));
       }}
     />
   );

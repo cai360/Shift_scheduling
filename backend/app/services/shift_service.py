@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date, time
 from sqlalchemy import and_
 from sqlalchemy.orm import aliased, selectinload
 from app.config import BUSINESS_TZ, UTC_TZ
@@ -143,8 +143,8 @@ class ShiftService:
         return created_shifts
     
     @staticmethod
-    def list_shifts_by_company(*, company_id, user_id, status: str| None = None, from_: datetime | None = None,
-    to_: datetime | None = None,): 
+    def list_shifts_by_company(*, company_id, user_id, status: str| None = None, from_: date | None = None,
+    to_: date | None = None,): 
 
         CompanyService.get_company(company_id)
 
@@ -153,10 +153,24 @@ class ShiftService:
         if not membership:
             raise PermissionDeniedError(message="Access denied.")
         
+        from_dt = (
+            datetime.combine(from_, time.min, tzinfo=BUSINESS_TZ)
+            if from_
+            else None
+        )
+
+        to_dt = (
+            datetime.combine(to_, time.min, tzinfo=BUSINESS_TZ)
+            if to_
+            else None
+        )
+
         shifts = (
             Shift.query.options(selectinload(Shift.assignments))
-                .filter(Shift.company_id == company_id,
-                        Shift.deleted_at.is_(None))
+            .filter(
+                Shift.company_id == company_id,
+                Shift.deleted_at.is_(None),
+            )
         )
 
         is_manager = membership.role in ("owner", "manager")
@@ -169,14 +183,10 @@ class ShiftService:
             elif status == "draft":
                 shifts = shifts.filter(Shift.published_at.is_(None))
         
-        if from_:
-            shifts = shifts.filter(
-                Shift.end_at > from_
-            )
-        if to_:
-            shifts = shifts.filter(
-                Shift.start_at < to_
-            )
+        if from_dt:
+            shifts = shifts.filter(Shift.end_at > from_)
+        if to_dt:
+            shifts = shifts.filter(Shift.start_at < to_)
         shifts = shifts.order_by(Shift.start_at.asc()).all()
 
         return shifts

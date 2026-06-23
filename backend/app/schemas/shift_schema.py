@@ -100,8 +100,8 @@ class ShiftBulkDeleteSchema(Schema):
 
 class ShiftQuerySchema(Schema):
     status = fields.Str(required=False)
-    from_ = fields.Str(data_key="from", required=False)
-    to_ = fields.Str(data_key="to", required=False)
+    from_ = fields.Date(data_key="from", required=False)
+    to_ = fields.Date(data_key="to", required=False)
 
 
 
