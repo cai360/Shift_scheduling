@@ -25,11 +25,8 @@ describe('auth api', () => {
     });
 
     expect(result).toEqual({
-      success: true,
-      data: {
-        access_token: 'access-token',
-        refresh_token: 'refresh-token',
-      },
+      access_token: 'access-token',
+      refresh_token: 'refresh-token',
     });
   });
 
@@ -49,7 +46,7 @@ describe('auth api', () => {
       password: 'password001',
     });
 
-    expect(result.data.email).toBe('new@example.com');
+    expect(result.email).toBe('new@example.com');
   });
 
   it('gets the current user with bearer token', async () => {
@@ -68,7 +65,7 @@ describe('auth api', () => {
 
     const result = await getMe();
 
-    expect(result.data.email).toBe('test@example.com');
+    expect(result.email).toBe('test@example.com');
     expect(mock.history.get[0].headers?.Authorization).toBe(
       'Bearer access-token',
     );
@@ -99,10 +96,10 @@ describe('auth api', () => {
         description: 'API test company',
       }),
     ).resolves.toMatchObject({
-      data: { name: 'Shift Test Co' },
+      name: 'Shift Test Co',
     });
     await expect(joinCompany('company-1')).resolves.toMatchObject({
-      data: { role: 'employee' },
+      role: 'employee',
     });
   });
 });

@@ -24,7 +24,7 @@ describe('company api', () => {
 
     const result = await getMyCompanies();
 
-    expect(result.data).toEqual([
+    expect(result).toEqual([
       {
         company_id: 'company-1',
         company_name: 'Shift Test Co',
