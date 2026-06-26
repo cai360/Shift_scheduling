@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta, date, time
-from sqlalchemy import and_
-from sqlalchemy.orm import aliased, selectinload
+from sqlalchemy.orm import selectinload
 from app.config import BUSINESS_TZ, UTC_TZ
 from app.extensions import db
 from app.models.shift import Shift
@@ -17,9 +16,10 @@ class ShiftService:
         MVP behavior:
         - create draft shifts only
         - draft shifts may overlap
-        - exact duplicate slots (same start_at, end_at) are rejected
-        - overlap constraints are enforced at publish time
-        - bulk creation is not idempotent
+        - exact duplicate slots are rejected
+        - employee assignment overlap is enforced when assigning shifts
+        - publishing does not require shifts to be assigned
+        - published shifts can still be assigned
         """
         CompanyService.get_company(company_id)
 
@@ -99,32 +99,10 @@ class ShiftService:
         if len(candidate_slots) != len(set(candidate_slots)):
             raise ValidationAppError("Duplicate shift slots detected in request.")
 
-        # reject exact duplicate active slots already in DB
-        min_candidate_start = min(start_at for start_at, _ in candidate_slots)
-        max_candidate_end = max(end_at for _, end_at in candidate_slots)
-
-        existing_shifts = (
-            Shift.query.filter(
-                Shift.company_id == company_id,
-                Shift.deleted_at.is_(None),
-                Shift.start_at < max_candidate_end,
-                Shift.end_at > min_candidate_start,
-            ).all()
+        ShiftService._validate_no_duplicate_slots(
+            company_id=company_id,
+            slots=candidate_slots,
         )
-
-        existing_slot_set = {
-            (shift.start_at, shift.end_at)
-            for shift in existing_shifts
-        }
-
-        duplicate_slots = [
-            (start_at, end_at)
-            for start_at, end_at in candidate_slots
-            if (start_at, end_at) in existing_slot_set
-        ]
-
-        if duplicate_slots:
-            raise ConflictError("Exact duplicate shift slots already exist.")
 
         created_shifts = []
         for start_at, end_at in candidate_slots:
@@ -218,15 +196,12 @@ class ShiftService:
 
         invalid_shift_ids = []
         already_published_ids = []
-        candidate_shifts = []
 
         for shift in shifts:
             if shift.company_id != company_id or shift.deleted_at is not None:
                 invalid_shift_ids.append(shift.id)
             elif shift.published_at is not None:
                 already_published_ids.append(shift.id)
-            else:
-                candidate_shifts.append(shift)
 
         invalid_shift_ids = sorted(set(not_found_ids + invalid_shift_ids))
         already_published_ids = sorted(already_published_ids)
@@ -241,26 +216,6 @@ class ShiftService:
                 f"Some shifts are already published. shift_ids={already_published_ids}"
             )
 
-        # ---- validation: overlap ----
-        overlap_candidate_ids = ShiftService._get_overlapping_candidate_shifts(
-            candidate_shifts
-        )
-        if overlap_candidate_ids:
-            raise ConflictError(
-                f"Cannot publish shifts: candidate shifts overlap. shift_ids={overlap_candidate_ids}"
-            )
-
-        overlap_with_published_ids = (
-            ShiftService._get_overlapping_published_shifts(
-                company_id=company_id,
-                shift_ids=shift_ids,
-            )
-        )
-
-        if overlap_with_published_ids:
-            raise ConflictError(
-                f"Cannot publish shifts: overlap with existing published shifts. shift_ids={overlap_with_published_ids}"
-            )
         # ---- publish ----
         now = datetime.now(tz=UTC_TZ)
 
@@ -284,45 +239,13 @@ class ShiftService:
         }
 
     @staticmethod
-    def _get_overlapping_published_shifts(*, company_id, shift_ids):
-        """
-        Return candidate draft shift ids that overlap with existing published shifts
-        in the same company.
-        """
-        existing = aliased(Shift) #self join
-        candidate = aliased(Shift)
-
-        rows = (
-            db.session.query(candidate.id)
-            .join(
-                existing,
-                and_(
-                    existing.company_id == company_id,
-                    existing.deleted_at.is_(None),
-                    existing.published_at.isnot(None),
-                    existing.start_at < candidate.end_at,
-                    existing.end_at > candidate.start_at,
-                ),
-            )
-            .filter(
-                candidate.company_id == company_id,
-                candidate.deleted_at.is_(None),
-                candidate.published_at.is_(None),
-                candidate.id.in_(shift_ids),
-            )
-            .distinct()
-            .all()
-        )
-
-        return sorted([row[0] for row in rows])
-    
-    @staticmethod
     def update_shift(*, company_id, shift_id, user_id, data):
         """
         MVP:
         - Only draft shifts can be updated
         - start_at / end_at are updated directly from submitted datetimes
-        - overlap is not validated here; it is enforced at publish time
+        - shift time overlap is allowed; employees cannot be assigned to overlapping shifts
+        - exact duplicate slots (same start_at + end_at) are rejected within the same company
         """
         shift = Shift.query.filter(
             Shift.id == shift_id,
@@ -353,6 +276,12 @@ class ShiftService:
         if new_start_at <= now:
             raise ValidationAppError("Cannot update shift to the past.")
 
+        ShiftService._validate_no_duplicate_slots(
+            company_id=company_id,
+            slots=[(new_start_at, new_end_at)],
+            exclude_shift_id=shift_id,
+        )
+
         shift.start_at = new_start_at
         shift.end_at = new_end_at
 
@@ -365,9 +294,6 @@ class ShiftService:
 
     @staticmethod
     def delete_shift(*, company_id, shift_id, user_id):
-        """
-        draft shift can be hard delete
-        """
         shift = Shift.query.filter(
             Shift.id == shift_id,
             Shift.company_id == company_id,
@@ -377,30 +303,78 @@ class ShiftService:
             raise NotFoundError(message="Shift not found")
         PermissionService.require_can_manage_company(
             company_id=company_id,
-            user_id = user_id
+            user_id=user_id
         )
 
         if shift.published_at is not None:
+            # TODO: support soft delete for published shifts
             raise ConflictError(message="Cannot delete a published shift.")
-        
         db.session.delete(shift)
         db.session.commit()
 
     @staticmethod
-    def _get_overlapping_candidate_shifts(candidate_shifts):
-        sorted_shifts = sorted(candidate_shifts, key=lambda s: s.start_at)
-        overlap_ids = set()
+    def _validate_no_duplicate_slots(*, company_id, slots, exclude_shift_id=None):
+        if not slots:
+            return
 
-        for i in range(len(sorted_shifts) - 1):
-            current_shift = sorted_shifts[i]
-            next_shift = sorted_shifts[i + 1]
+        min_start = min(start for start, _ in slots)
+        max_end = max(end for _, end in slots)
 
-            if current_shift.end_at > next_shift.start_at:
-                overlap_ids.add(current_shift.id)
-                overlap_ids.add(next_shift.id)
+        query = Shift.query.filter(
+            Shift.company_id == company_id,
+            Shift.deleted_at.is_(None),
+            Shift.start_at < max_end,
+            Shift.end_at > min_start,
+        )
+        if exclude_shift_id is not None:
+            query = query.filter(Shift.id != exclude_shift_id)
 
-        return sorted(overlap_ids)
+        existing_slot_set = {(s.start_at, s.end_at) for s in query.all()}
 
+        if any((start, end) in existing_slot_set for start, end in slots):
+            raise ConflictError("Exact duplicate shift slots already exist.")
+
+
+    # @staticmethod
+    # def _get_overlapping_candidate_shifts(candidate_shifts):
+    #     sorted_shifts = sorted(candidate_shifts, key=lambda s: s.start_at)
+    #     overlap_ids = set()
+    #     for i in range(len(sorted_shifts) - 1):
+    #         current_shift = sorted_shifts[i]
+    #         next_shift = sorted_shifts[i + 1]
+    #         if current_shift.end_at > next_shift.start_at:
+    #             overlap_ids.add(current_shift.id)
+    #             overlap_ids.add(next_shift.id)
+    #     return sorted(overlap_ids)
+
+    # @staticmethod
+    # def _get_overlapping_published_shifts(*, company_id, shift_ids):
+    #     from sqlalchemy import and_
+    #     from sqlalchemy.orm import aliased
+    #     existing = aliased(Shift)
+    #     candidate = aliased(Shift)
+    #     rows = (
+    #         db.session.query(candidate.id)
+    #         .join(
+    #             existing,
+    #             and_(
+    #                 existing.company_id == company_id,
+    #                 existing.deleted_at.is_(None),
+    #                 existing.published_at.isnot(None),
+    #                 existing.start_at < candidate.end_at,
+    #                 existing.end_at > candidate.start_at,
+    #             ),
+    #         )
+    #         .filter(
+    #             candidate.company_id == company_id,
+    #             candidate.deleted_at.is_(None),
+    #             candidate.published_at.is_(None),
+    #             candidate.id.in_(shift_ids),
+    #         )
+    #         .distinct()
+    #         .all()
+    #     )
+    #     return sorted([row[0] for row in rows])
 
 
 def minutes_since_midnight(t):

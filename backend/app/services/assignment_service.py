@@ -19,31 +19,34 @@ class AssignmentService:
 
         user = CompanyUserService.get_active_membership(company_id=company_id, user_id=target_user_id)
         if not user:
-            NotFoundError(message="Company member not found")
+            raise NotFoundError(message="Company member not found")
         
-        unique_shift_ids = list(dict.fromkeys(shift_ids))
-        if len(unique_shift_ids) != len(shift_ids):
-            raise ValueError("shift_ids must be unique")
-        
+        if len(shift_ids) != len(set(shift_ids)):
+            raise ValidationAppError("shift_ids must be unique")
+
         shifts = (
             Shift.query
             .filter(
                 Shift.company_id == company_id,
-                Shift.id.in_(unique_shift_ids),
+                Shift.id.in_(shift_ids),
                 Shift.deleted_at.is_(None),
-                Shift.published_at.isnot(None)
             ).all()
         )
-        if len(shifts) != len(unique_shift_ids):
-             raise ValidationAppError("Some shifts are invalid, not published, or not in this company")
-        
+        if len(shifts) != len(shift_ids):
+            raise ValidationAppError("Some shifts are invalid or not in this company")
+
         AssignmentService._validate_already_assigned(
             target_user_id=target_user_id,
-            shift_ids = unique_shift_ids
+            shift_ids=shift_ids
         )
 
-        AssignmentService._validate_capacity(shifts = shifts)
-        
+        AssignmentService._validate_capacity(shifts=shifts)
+
+        AssignmentService._validate_employee_shift_overlap(
+            target_user_id=target_user_id,
+            shifts=shifts
+        )
+
         AssignmentService._validate_with_unavailability(
             company_id=company_id,
             target_user_id=target_user_id,
@@ -99,6 +102,62 @@ class AssignmentService:
 
 
     @staticmethod
+    def _is_time_overlap(start_a, end_a, start_b, end_b):
+        return start_a < end_b and end_a > start_b
+
+    @staticmethod
+    def _validate_employee_shift_overlap(*, target_user_id, shifts):
+        if not shifts:
+            return
+
+        shift_ids = [s.id for s in shifts]
+
+        sorted_shifts = sorted(shifts, key=lambda s: s.start_at)
+        for prev, curr in zip(sorted_shifts, sorted_shifts[1:]):
+            if AssignmentService._is_time_overlap(prev.start_at, prev.end_at, curr.start_at, curr.end_at):
+                raise ConflictError(
+                    message="assignment.employee_shift_overlap",
+                    details={"conflict_shift_ids": sorted([prev.id, curr.id])},
+                )
+
+        min_start = min(s.start_at for s in shifts)
+        max_end = max(s.end_at for s in shifts)
+
+        existing = (
+            db.session.query(ShiftAssignment.shift_id, Shift.start_at, Shift.end_at)
+            .join(Shift, Shift.id == ShiftAssignment.shift_id)
+            .filter(
+                ShiftAssignment.user_id == target_user_id,
+                ShiftAssignment.deleted_at.is_(None),
+                Shift.deleted_at.is_(None),
+                Shift.end_at > min_start,
+                Shift.start_at < max_end,
+            )
+        )
+
+        if shift_ids:
+            existing = existing.filter(ShiftAssignment.shift_id.notin_(shift_ids))
+
+        existing = existing.all()
+
+        conflict_shift_ids = []
+        existing_conflict_shift_ids = []
+        for shift in shifts:
+            for ex_shift_id, ex_start, ex_end in existing:
+                if AssignmentService._is_time_overlap(ex_start, ex_end, shift.start_at, shift.end_at):
+                    conflict_shift_ids.append(shift.id)
+                    existing_conflict_shift_ids.append(ex_shift_id)
+
+        if conflict_shift_ids:
+            raise ConflictError(
+                message="assignment.employee_shift_overlap",
+                details={
+                    "conflict_shift_ids": sorted(set(conflict_shift_ids)),
+                    "existing_conflict_shift_ids": sorted(set(existing_conflict_shift_ids)),
+                },
+            )
+
+    @staticmethod
     def _validate_with_unavailability(*, company_id, target_user_id, shifts):
         if not shifts:
             return
@@ -120,8 +179,10 @@ class AssignmentService:
 
         for shift in shifts:
             has_conflict = any(
-                unavailability.start_at < shift.end_at
-                and unavailability.end_at > shift.start_at
+                AssignmentService._is_time_overlap(
+                    unavailability.start_at, unavailability.end_at,
+                    shift.start_at, shift.end_at
+                )
                 for unavailability in unavailabilities
             )
 
@@ -130,8 +191,8 @@ class AssignmentService:
 
         if conflict_shift_ids:
             raise ConflictError(
-                message="unavailability_overlap",
-                details=sorted(conflict_shift_ids),
+                message="assignment.unavailability_overlap",
+                details={"conflict_shift_ids": sorted(conflict_shift_ids)},
             )
 
     @staticmethod
@@ -152,8 +213,8 @@ class AssignmentService:
         )
         
     @staticmethod
-    def _validate_capacity(shifts):
-        count = (
+    def _validate_capacity(*, shifts):
+        assignment_counts = (
             db.session.query(
                 ShiftAssignment.shift_id,
                 func.count(ShiftAssignment.id).label("count")
@@ -163,18 +224,18 @@ class AssignmentService:
             ).group_by(ShiftAssignment.shift_id)
             .all()
         )
-        count_map = {shift_id: count for shift_id, count in count}
+        assignment_count_by_shift = {shift_id: cnt for shift_id, cnt in assignment_counts}
 
         over_capacity_shift_ids = []
         for shift in shifts:
-            if count_map.get(shift.id, 0) >= shift.capacity:
+            if assignment_count_by_shift.get(shift.id, 0) >= shift.capacity:
                 over_capacity_shift_ids.append(shift.id)
 
         if over_capacity_shift_ids:
             raise ConflictError(
-                    message="assignment.capacity_exceeded",
-                    details={"shift_ids": sorted(over_capacity_shift_ids)},
-                )
+                message="assignment.capacity_exceeded",
+                details={"conflict_shift_ids": sorted(over_capacity_shift_ids)},
+            )
 
 
 
