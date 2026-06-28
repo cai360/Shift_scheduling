@@ -42,6 +42,7 @@ class Shift(BaseModel):
             "ShiftAssignment.deleted_at.is_(None)"
             ")"
         ),
+        passive_deletes=True,
     )
 
 

@@ -3,6 +3,7 @@ from sqlalchemy.orm import selectinload
 from app.config import BUSINESS_TZ, UTC_TZ
 from app.extensions import db
 from app.models.shift import Shift
+from app.models.shift_assignments import ShiftAssignment
 from app.services.company_service import CompanyService
 from app.services.companyUser_service import CompanyUserService
 from app.services.permission_services import PermissionService
@@ -65,33 +66,23 @@ class ShiftService:
         now = datetime.now(tz=UTC_TZ)
 
         while current_date <= end_date:
-            local_start = datetime.combine(
-                current_date,
-                start_time,
-                tzinfo=BUSINESS_TZ
-            )
-            local_end = datetime.combine(
-                current_date,
-                end_time,
-                tzinfo=BUSINESS_TZ
-            )
+            local_start = datetime.combine(current_date, start_time)
+            local_end = datetime.combine(current_date, end_time)
 
             if is_overnight:
                 local_end += timedelta(days=1)
                 if local_end.date() > end_date:
                     break
 
-            start_at_utc = local_start.astimezone(UTC_TZ)
-            end_at_utc = local_end.astimezone(UTC_TZ)
-
-            slot_start = start_at_utc
-            while slot_start < end_at_utc:
-                slot_end = slot_start + timedelta(minutes=interval_minutes)
-                if slot_start <= now:
+            local_slot_start = local_start
+            while local_slot_start < local_end:
+                local_slot_end = local_slot_start + timedelta(minutes=interval_minutes)
+                slot_start_utc = ShiftService._local_to_utc(local_slot_start)
+                slot_end_utc = ShiftService._local_to_utc(local_slot_end)
+                if slot_start_utc <= now:
                     raise ValidationAppError("request includes past slots")
-                
-                candidate_slots.append((slot_start, slot_end))
-                slot_start = slot_end
+                candidate_slots.append((slot_start_utc, slot_end_utc))
+                local_slot_start = local_slot_end
 
             current_date += timedelta(days=1)
 
@@ -121,8 +112,8 @@ class ShiftService:
         return created_shifts
     
     @staticmethod
-    def list_shifts_by_company(*, company_id, user_id, status: str| None = None, from_: date | None = None,
-    to_: date | None = None,): 
+    def list_shifts_by_company(*, company_id, user_id, status: str | None = None, from_: date | None = None,
+    to_: date | None = None):
 
         CompanyService.get_company(company_id)
 
@@ -130,18 +121,6 @@ class ShiftService:
 
         if not membership:
             raise PermissionDeniedError(message="Access denied.")
-        
-        from_dt = (
-            datetime.combine(from_, time.min, tzinfo=BUSINESS_TZ)
-            if from_
-            else None
-        )
-
-        to_dt = (
-            datetime.combine(to_, time.min, tzinfo=BUSINESS_TZ)
-            if to_
-            else None
-        )
 
         shifts = (
             Shift.query.options(selectinload(Shift.assignments))
@@ -160,11 +139,14 @@ class ShiftService:
                 shifts = shifts.filter(Shift.published_at.isnot(None))
             elif status == "draft":
                 shifts = shifts.filter(Shift.published_at.is_(None))
-        
-        if from_dt:
+
+        if from_ is not None:
+            from_dt = datetime.combine(from_, time.min, tzinfo=BUSINESS_TZ)
             shifts = shifts.filter(Shift.end_at > from_dt)
-        if to_dt:
+        if to_ is not None:
+            to_dt = datetime.combine(to_, time.min, tzinfo=BUSINESS_TZ)
             shifts = shifts.filter(Shift.start_at < to_dt)
+
         shifts = shifts.order_by(Shift.start_at.asc()).all()
 
         return shifts
@@ -263,11 +245,20 @@ class ShiftService:
         if shift.published_at is not None:
             raise ConflictError(message="Cannot update a published shift.")
 
-        new_start_at = data.get("start_time", shift.start_at)
-        new_end_at = data.get("end_time", shift.end_at)
+        new_start_naive = data.get("start_time")
+        new_end_naive = data.get("end_time")
 
-        new_start_at = new_start_at.astimezone(UTC_TZ)
-        new_end_at = new_end_at.astimezone(UTC_TZ)
+        new_start_at = (
+            ShiftService._local_to_utc(new_start_naive)
+            if new_start_naive is not None
+            else shift.start_at
+        )
+
+        new_end_at = (
+            ShiftService._local_to_utc(new_end_naive)
+            if new_end_naive is not None
+            else shift.end_at
+        )
 
         if new_start_at >= new_end_at:
             raise ValidationAppError("end_time must be later than start_time.")
@@ -282,11 +273,25 @@ class ShiftService:
             exclude_shift_id=shift_id,
         )
 
+        if new_start_at != shift.start_at or new_end_at != shift.end_at:
+            ShiftService._validate_shift_time_update(
+                shift=shift,
+                new_start_at=new_start_at,
+                new_end_at=new_end_at,
+            )
+
+        new_capacity = data.get("capacity")
+        if new_capacity is not None:
+            ShiftService._validate_shift_capacity_update(
+                shift=shift,
+                new_capacity=new_capacity,
+            )
+
         shift.start_at = new_start_at
         shift.end_at = new_end_at
 
-        if "capacity" in data:
-            shift.capacity = data["capacity"]
+        if new_capacity is not None:
+            shift.capacity = new_capacity
 
         db.session.commit()
         return shift
@@ -309,8 +314,65 @@ class ShiftService:
         if shift.published_at is not None:
             # TODO: support soft delete for published shifts
             raise ConflictError(message="Cannot delete a published shift.")
+        ShiftAssignment.query.filter(ShiftAssignment.shift_id == shift_id).delete()
         db.session.delete(shift)
         db.session.commit()
+
+    @staticmethod
+    def _validate_shift_time_update(*, shift, new_start_at, new_end_at):
+        assigned_user_ids = [
+            row[0] for row in
+            db.session.query(ShiftAssignment.user_id)
+            .filter(
+                ShiftAssignment.shift_id == shift.id,
+                ShiftAssignment.deleted_at.is_(None),
+            ).all()
+        ]
+        if not assigned_user_ids:
+            return
+
+        conflicting = (
+            db.session.query(ShiftAssignment.user_id, ShiftAssignment.shift_id)
+            .join(Shift, Shift.id == ShiftAssignment.shift_id)
+            .filter(
+                ShiftAssignment.user_id.in_(assigned_user_ids),
+                ShiftAssignment.shift_id != shift.id,
+                ShiftAssignment.deleted_at.is_(None),
+                Shift.deleted_at.is_(None),
+                Shift.end_at > new_start_at,
+                Shift.start_at < new_end_at,
+            )
+            .all()
+        )
+        if conflicting:
+            raise ConflictError(
+                message="shift.time_update_employee_conflict",
+                details={
+                    "conflict_user_ids": sorted(set(row[0] for row in conflicting)),
+                    "conflict_shift_ids": sorted(set(row[1] for row in conflicting)),
+                },
+            )
+
+    @staticmethod
+    def _validate_shift_capacity_update(*, shift, new_capacity):
+        assignment_count = ShiftAssignment.query.filter(
+            ShiftAssignment.shift_id == shift.id,
+            ShiftAssignment.deleted_at.is_(None),
+        ).count()
+        if new_capacity < assignment_count:
+            raise ConflictError(
+                message="shift.capacity_too_low",
+                details={
+                    "current_assignment_count": assignment_count,
+                    "requested_capacity": new_capacity,
+                },
+            )
+
+    @staticmethod
+    def _local_to_utc(naive_dt):
+        if naive_dt.tzinfo is not None:
+            raise ValidationAppError("Datetime must be naive (no timezone). Provide local time.")
+        return naive_dt.replace(tzinfo=BUSINESS_TZ).astimezone(UTC_TZ)
 
     @staticmethod
     def _validate_no_duplicate_slots(*, company_id, slots, exclude_shift_id=None):
