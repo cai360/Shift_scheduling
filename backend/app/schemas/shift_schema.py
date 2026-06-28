@@ -104,8 +104,6 @@ class ShiftQuerySchema(Schema):
     status = fields.Str(required=False)
     from_ = fields.Date(data_key="from", required=False)
     to_ = fields.Date(data_key="to", required=False)
-<<<<<<< HEAD
-=======
 
     @validates_schema
     def validate_date_range(self, data, **kwargs):
@@ -113,7 +111,6 @@ class ShiftQuerySchema(Schema):
         to_ = data.get("to_")
         if from_ is not None and to_ is not None and from_ >= to_:
             raise ValidationError({"from": ["'from' must be before 'to'."]})
->>>>>>> ccc00e7 (refactor(shift): update lifecycle to allow assign on draft/published)
 
 
 

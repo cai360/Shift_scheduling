@@ -42,8 +42,8 @@ The Assignment module manages the allocation of employees to shifts, ensuring th
 
 ## APIs
 
-- POST   /companies/{company_id}/assignments   (manager/owner only)
-- POST /companies/{company_id}/assignments   (manager/owner only)
+- POST   /companies/{company_id}/assignments           (manager/owner only)
+- POST   /companies/{company_id}/assignments/unassign  (manager/owner only)
 
 ---
 
@@ -62,6 +62,7 @@ The Assignment module manages the allocation of employees to shifts, ensuring th
 - All shifts must:
   - belong to the company
   - not be deleted
+  - (draft or published both accepted)
 - Operation is **all-or-nothing**:
   - if any shift fails validation → entire request fails
 - Assignments are created in batch.
@@ -70,10 +71,17 @@ The Assignment module manages the allocation of employees to shifts, ensuring th
 
 ## Assignment Deletion (Unassign)
 
+### Request Example
+```
+{
+  "assignment_ids": ["uuid1", "uuid2"]
+}
+```
+
 - Uses soft delete (`deleted_at`)
 - Only allowed if:
   - assignment belongs to the company
-  - assignment is active
+  - assignment is active (`deleted_at IS NULL`)
 
 ### Behavior
 - Partial success is not allowed:

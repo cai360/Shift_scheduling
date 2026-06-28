@@ -30,11 +30,12 @@ The module focuses on shift generation and lifecycle control, not on employee as
 ---
 
 ## APIs
-- POST   /companies/{company_id}/shifts/bulk  (manager/owner only)
-- GET    /companies/{company_id}/shifts       (list shifts)
-- PATCH  /shifts/{shift_id}                  (draft only)
-- DELETE /shifts/{shift_id}                  (draft only)
-- POST   /companies/{company_id}/shifts/publish (manager/owner only)
+- POST   /companies/{company_id}/shifts/bulk                  (manager/owner only)
+- GET    /companies/{company_id}/shifts                       (all roles)
+  - Query params: `status` (draft|published, manager/owner only), `from` (YYYY-MM-DD), `to` (YYYY-MM-DD)
+- PATCH  /companies/{company_id}/shifts/{shift_id}            (draft only, manager/owner only)
+- DELETE /companies/{company_id}/shifts/{shift_id}            (draft only, manager/owner only)
+- POST   /companies/{company_id}/shifts/publish               (manager/owner only)
 
 API Notes
 - Bulk creation is the primary creation method.
@@ -42,7 +43,8 @@ API Notes
 - Publishing is treated as irreversible in MVP.
 - Bulk publish is **all-or-nothing**:
   - If any shift is invalid, already published, deleted, or not in the company, the request fails.
-- Deleting a draft shift is a hard delete (cascades to assignments); published shifts cannot be deleted in MVP.
+- Deleting a draft shift is a hard delete (cascades to all assignments including soft-deleted ones); published shifts cannot be deleted in MVP.
+- Employees only see published shifts; managers/owners see all shifts and can filter by status.
 ---
 ## Shift Creation (Bulk)
 Shifts are not created one by one by managers, manager defined a time-range and generation rule, and the system generatres individual shift records accordingly. 

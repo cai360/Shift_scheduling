@@ -26,35 +26,21 @@ def create_empty_shifts(company_id):
 @jwt_required
 def get_shifts(company_id):
     """
-    Query params:
-<<<<<<< HEAD
     - status: optional[str] = "published"
     - from:   optional[date] inclusive start (YYYY-MM-DD)
     - to:     optional[date] exclusive end (YYYY-MM-DD)
-=======
-    - status: optional[str]
-    - from:   optional[YYYY-MM-DD]
-    - to:     optional[YYYY-MM-DD]
->>>>>>> ccc00e7 (refactor(shift): update lifecycle to allow assign on draft/published)
+
     """
     query = ShiftQuerySchema().load(request.args)
 
     shifts = ShiftService.list_shifts_by_company(
         company_id=company_id,
         user_id=g.user_id,
-<<<<<<< HEAD
         status=query.get("status"),
         from_=query.get("from_"),
         to_=query.get("to_"),
     )
     
-=======
-        status=query.get("status") or None,
-        from_=query.get("from_"),
-        to_=query.get("to_"),
-    )
-
->>>>>>> ccc00e7 (refactor(shift): update lifecycle to allow assign on draft/published)
     return ok(ShiftOutSchema(many=True).dump(shifts))
 
 
