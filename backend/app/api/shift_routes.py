@@ -29,8 +29,8 @@ def get_shifts(company_id):
     """
     Query params:
     - status: optional[str] = "published"
-    - from:   optional[ISO-8601 datetime]
-    - to:     optional[ISO-8601 datetime]
+    - from:   optional[date] inclusive start (YYYY-MM-DD)
+    - to:     optional[date] exclusive end (YYYY-MM-DD)
     """
     query = ShiftQuerySchema().load(request.args)
 

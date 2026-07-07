@@ -3,14 +3,15 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import { type Shift } from '../../services/shift.api';
 import { useMemo } from 'react';
 import type { EventInput } from '@fullcalendar/core';
+import {
+  toBusinessParts,
+  toBusinessDateOnly,
+  formatFullCalendarSlotTime,
+} from '../../utils/datetime';
 
 type Props = {
   shifts: Shift[];
   onRangeChange: (from: string, to: string) => void;
-};
-
-const toDateOnly = (date: Date) => {
-  return date.toLocaleDateString('en-CA');
 };
 
 const ShiftCalendarView = ({ shifts, onRangeChange }: Props) => {
@@ -31,9 +32,9 @@ const ShiftCalendarView = ({ shifts, onRangeChange }: Props) => {
       };
     }
     const hasOvernightShift = shifts.some((shift) => {
-      const start = new Date(shift.start_at);
-      const end = new Date(shift.end_at);
-      return start.toDateString() !== end.toDateString();
+      const start = toBusinessParts(shift.start_at);
+      const end = toBusinessParts(shift.end_at);
+      return start.dateKey !== end.dateKey;
     });
 
     if (hasOvernightShift) {
@@ -44,27 +45,19 @@ const ShiftCalendarView = ({ shifts, onRangeChange }: Props) => {
     }
 
     const earliest = Math.min(
-      ...shifts.map((shift) => new Date(shift.start_at).getTime()),
+      ...shifts.map((shift) => toBusinessParts(shift.start_at).minutesOfDay),
     );
 
     const latest = Math.max(
-      ...shifts.map((shift) => new Date(shift.end_at).getTime()),
+      ...shifts.map((shift) => toBusinessParts(shift.end_at).minutesOfDay),
     );
 
-    const earliestDate = new Date(earliest);
-    const latestDate = new Date(latest);
+    const slotMinTime = formatFullCalendarSlotTime(earliest - 60);
+    const slotMaxTime = formatFullCalendarSlotTime(latest + 60);
 
-    earliestDate.setHours(Math.max(0, earliestDate.getHours() - 1));
-    latestDate.setHours(Math.min(23, latestDate.getHours() + 1));
+    console.log('calendarRange', { slotMinTime, slotMaxTime });
 
-    return {
-      slotMinTime: `${earliestDate
-        .getHours()
-        .toString()
-        .padStart(2, '0')}:00:00`,
-
-      slotMaxTime: `${latestDate.getHours().toString().padStart(2, '0')}:00:00`,
-    };
+    return { slotMinTime, slotMaxTime };
   }, [shifts]);
 
   return (
@@ -76,7 +69,10 @@ const ShiftCalendarView = ({ shifts, onRangeChange }: Props) => {
       slotMinTime={calendarRange.slotMinTime}
       slotMaxTime={calendarRange.slotMaxTime}
       datesSet={(arg) => {
-        onRangeChange(toDateOnly(arg.start), toDateOnly(arg.end));
+        onRangeChange(
+          toBusinessDateOnly(arg.start),
+          toBusinessDateOnly(arg.end),
+        );
       }}
     />
   );

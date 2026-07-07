@@ -184,9 +184,9 @@ class ShiftService:
                 shifts = shifts.filter(Shift.published_at.is_(None))
         
         if from_dt:
-            shifts = shifts.filter(Shift.end_at > from_)
+            shifts = shifts.filter(Shift.end_at > from_dt)
         if to_dt:
-            shifts = shifts.filter(Shift.start_at < to_)
+            shifts = shifts.filter(Shift.start_at < to_dt)
         shifts = shifts.order_by(Shift.start_at.asc()).all()
 
         return shifts
