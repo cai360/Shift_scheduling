@@ -17,17 +17,19 @@ logging.basicConfig(
 
 def create_app(config_object=None):
     app = Flask(__name__)
-    CORS(app, supports_credentials=True, origins="http://localhost:5173") 
+
+    allowed_origins = [o.strip() for o in os.environ.get("CORS_ORIGINS", "http://localhost:5173").split(",")]
+    CORS(app, supports_credentials=True, origins=allowed_origins)
 
     if config_object:
         app.config.from_object(config_object)
-    else: 
+    else:
         app.config.from_object(Config)
 
-    # cookies/sessions are essential for cross-domain
+    is_production = os.environ.get("FLASK_ENV") == "production"
     app.config.update(
         SESSION_COOKIE_SAMESITE="None",
-        SESSION_COOKIE_SECURE=False,  # local must be False
+        SESSION_COOKIE_SECURE=is_production,
     )
 
     # Bind SQLAlchemy to this Flask app
