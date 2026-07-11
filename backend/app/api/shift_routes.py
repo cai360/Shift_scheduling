@@ -29,23 +29,18 @@ def get_shifts(company_id):
     """
     Query params:
     - status: optional[str] = "published"
-    - from:   optional[ISO-8601 datetime]
-    - to:     optional[ISO-8601 datetime]
+    - from:   optional[date] inclusive start (YYYY-MM-DD)
+    - to:     optional[date] exclusive end (YYYY-MM-DD)
     """
     query = ShiftQuerySchema().load(request.args)
-    try:
-        from_ = parse_datetime(query["from_"]) if query.get("from_") else None
-        to_ = parse_datetime(query["to_"]) if query.get("to_") else None
-    except ValueError:
-        raise ValueError("Invalid datetime format.")
 
     shifts = ShiftService.list_shifts_by_company(
         company_id=company_id,
         user_id=g.user_id,
         status=query.get("status"),
-        from_=from_,
-        to_=to_
-        )
+        from_=query.get("from_"),
+        to_=query.get("to_"),
+    )
     
     return ok(ShiftOutSchema(many=True).dump(shifts))
 

@@ -4,6 +4,7 @@ import AuthGuard from './guards';
 import AuthLayout from '../layouts/AuthLayout';
 import NewCompanyPage from '../pages/NewCompany';
 import MembersPage from '../pages/Members';
+import ShiftManagementPage from '../pages/ShiftManagementPage';
 
 const PrivateRoutes = [
   {
@@ -16,6 +17,7 @@ const PrivateRoutes = [
       { path: '/home', element: <HomePage /> },
       { path: '/new-company', element: <NewCompanyPage /> },
       { path: '/members', element: <MembersPage /> },
+      { path: '/shift-management', element: <ShiftManagementPage /> },
     ],
   },
 ];
