@@ -2,6 +2,7 @@ from datetime import datetime, timedelta, date, time
 from sqlalchemy.orm import selectinload
 from app.config import BUSINESS_TZ, UTC_TZ
 from app.extensions import db
+from app.models.companies import Company
 from app.models.shift import Shift
 from app.models.shift_assignments import ShiftAssignment
 from app.services.company_service import CompanyService
@@ -90,6 +91,8 @@ class ShiftService:
         if len(candidate_slots) != len(set(candidate_slots)):
             raise ValidationAppError("Duplicate shift slots detected in request.")
 
+        ShiftService._lock_company_for_shift_write(company_id)
+
         ShiftService._validate_no_duplicate_slots(
             company_id=company_id,
             slots=candidate_slots,
@@ -165,9 +168,10 @@ class ShiftService:
             raise ValidationAppError("shift_ids must be unique")
 
         # ---- validation: invalid / already published ----
+        # locked here so nothing can change published_at between validation and the write below
         shifts = Shift.query.filter(
             Shift.id.in_(shift_ids)
-        ).all()
+        ).with_for_update().all()
 
         found_by_id = {shift.id: shift for shift in shifts}
 
@@ -201,23 +205,13 @@ class ShiftService:
         # ---- publish ----
         now = datetime.now(tz=UTC_TZ)
 
-        updated_count = (
-            Shift.query.filter(
-                Shift.company_id == company_id,
-                Shift.id.in_(shift_ids),
-                Shift.published_at.is_(None),
-                Shift.deleted_at.is_(None),
-            )
-            .update(
-                {Shift.published_at: now},
-                synchronize_session=False
-            )
-        )
+        for shift in shifts:
+            shift.published_at = now
         db.session.commit()
 
         return {
             "requested": len(shift_ids),
-            "published": updated_count,
+            "published": len(shifts),
         }
 
     @staticmethod
@@ -266,6 +260,8 @@ class ShiftService:
         now = datetime.now(tz=UTC_TZ)
         if new_start_at <= now:
             raise ValidationAppError("Cannot update shift to the past.")
+
+        ShiftService._lock_company_for_shift_write(company_id)
 
         ShiftService._validate_no_duplicate_slots(
             company_id=company_id,
@@ -367,6 +363,10 @@ class ShiftService:
                     "requested_capacity": new_capacity,
                 },
             )
+
+    @staticmethod
+    def _lock_company_for_shift_write(company_id):
+        db.session.query(Company.id).filter(Company.id == company_id).with_for_update().first()
 
     @staticmethod
     def _local_to_utc(naive_dt):
