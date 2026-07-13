@@ -32,7 +32,7 @@ The module focuses on shift generation and lifecycle control, not on employee as
 ## APIs
 - POST   /companies/{company_id}/shifts/bulk                  (manager/owner only)
 - GET    /companies/{company_id}/shifts                       (all roles)
-  - Query params: `status` (draft|published, manager/owner only), `from` (YYYY-MM-DD), `to` (YYYY-MM-DD)
+  - Query params: `status` (draft|published, manager/owner only), `from` (YYYY-MM-DD, inclusive), `to` (YYYY-MM-DD, exclusive — see [docs/timezone.md](../docs/timezone.md))
 - PATCH  /companies/{company_id}/shifts/{shift_id}            (draft only, manager/owner only)
 - DELETE /companies/{company_id}/shifts/{shift_id}            (draft only, manager/owner only)
 - POST   /companies/{company_id}/shifts/publish               (manager/owner only)

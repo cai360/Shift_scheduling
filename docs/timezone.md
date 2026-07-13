@@ -12,6 +12,7 @@ Backend
 - Naive local datetimes are interpreted using BUSINESS_TZ.
 - They are converted to UTC before persisting.
 - Query dates are expanded to BUSINESS_TZ day boundaries before querying.
+- Date ranges are half-open: `from` is inclusive (start-of-day), `to` is exclusive (start-of-day) — i.e. `[from 00:00, to 00:00)`. To include a given day, pass the following day as `to`.
 
 Response
 --------
