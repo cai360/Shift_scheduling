@@ -227,7 +227,7 @@ class ShiftService:
             Shift.id == shift_id,
             Shift.company_id == company_id,
             Shift.deleted_at.is_(None),
-        ).first()
+        ).with_for_update().first()
         if not shift:
             raise NotFoundError(message="Shift not found")
 
@@ -239,8 +239,8 @@ class ShiftService:
         if shift.published_at is not None:
             raise ConflictError(message="Cannot update a published shift.")
 
-        new_start_naive = data.get("start_time")
-        new_end_naive = data.get("end_time")
+        new_start_naive = data.get("start_at")
+        new_end_naive = data.get("end_at")
 
         new_start_at = (
             ShiftService._local_to_utc(new_start_naive)
@@ -310,7 +310,6 @@ class ShiftService:
         if shift.published_at is not None:
             # TODO: support soft delete for published shifts
             raise ConflictError(message="Cannot delete a published shift.")
-        ShiftAssignment.query.filter(ShiftAssignment.shift_id == shift_id).delete()
         db.session.delete(shift)
         db.session.commit()
 
@@ -366,6 +365,8 @@ class ShiftService:
 
     @staticmethod
     def _lock_company_for_shift_write(company_id):
+        # global per-company lock serializes all shift writes for the company;
+        # switch to a narrower (e.g. slot-range or advisory) lock if this becomes a throughput bottleneck.
         db.session.query(Company.id).filter(Company.id == company_id).with_for_update().first()
 
     @staticmethod

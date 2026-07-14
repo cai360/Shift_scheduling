@@ -73,8 +73,8 @@ class ShiftPublishSchema(Schema):
     )
 
 class ShiftUpdateSchema(Schema):
-    start_time = fields.DateTime(required=False) 
-    end_time = fields.DateTime(required=False)
+    start_at = fields.DateTime(required=False)
+    end_at = fields.DateTime(required=False)
 
     capacity = fields.Integer(
         required=False,
@@ -83,15 +83,15 @@ class ShiftUpdateSchema(Schema):
 
     @validates_schema
     def validate_time_range(self, data, **kwargs):
-        start = data.get("start_time")
-        end = data.get("end_time")
+        start = data.get("start_at")
+        end = data.get("end_at")
 
-        for field, value in [("start_time", start), ("end_time", end)]:
+        for field, value in [("start_at", start), ("end_at", end)]:
             if value is not None and value.tzinfo is not None:
                 raise ValidationError({field: ["Datetime must be naive (no timezone). Provide local time."]})
 
         if start and end and start == end:
-            raise ValidationError("start_time and end_time cannot be the same.")
+            raise ValidationError("start_at and end_at cannot be the same.")
 
 class ShiftBulkDeleteSchema(Schema):
     shift_ids = fields.List(

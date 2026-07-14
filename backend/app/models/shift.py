@@ -1,5 +1,5 @@
 from app.extensions import db
-from sqlalchemy import UniqueConstraint, func
+from sqlalchemy import UniqueConstraint, func, text
 from sqlalchemy.dialects.postgresql import UUID
 from datetime import datetime, timedelta
 from .base import BaseModel
@@ -22,7 +22,6 @@ class Shift(BaseModel):
 
     deleted_at = db.Column(db.DateTime(timezone=True), nullable=True)
 
-    #temporary limited same starting_time and same ending_time can't exit in the same day
     __table_args__ = (
         db.CheckConstraint(
             'end_at > start_at',
@@ -30,6 +29,12 @@ class Shift(BaseModel):
         ),
         db.Index('ix_shift_start_at', 'start_at'),
         db.Index('ix_shift_end_at', 'end_at'),
+        db.Index(
+            'uq_shift_company_slot',
+            'company_id', 'start_at', 'end_at',
+            unique=True,
+            postgresql_where=text('deleted_at IS NULL'),
+        ),
     )
 
     assignments = db.relationship(
