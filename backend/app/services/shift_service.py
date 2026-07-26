@@ -223,6 +223,13 @@ class ShiftService:
         - shift time overlap is allowed; employees cannot be assigned to overlapping shifts
         - exact duplicate slots (same start_at + end_at) are rejected within the same company
         """
+        PermissionService.require_can_manage_company(
+            company_id=company_id,
+            user_id=user_id
+        )
+
+        ShiftService._lock_company_for_shift_write(company_id)
+
         shift = Shift.query.filter(
             Shift.id == shift_id,
             Shift.company_id == company_id,
@@ -230,11 +237,6 @@ class ShiftService:
         ).with_for_update().first()
         if not shift:
             raise NotFoundError(message="Shift not found")
-
-        PermissionService.require_can_manage_company(
-            company_id=company_id,
-            user_id=user_id
-        )
 
         if shift.published_at is not None:
             raise ConflictError(message="Cannot update a published shift.")
@@ -260,8 +262,6 @@ class ShiftService:
         now = datetime.now(tz=UTC_TZ)
         if new_start_at <= now:
             raise ValidationAppError("Cannot update shift to the past.")
-
-        ShiftService._lock_company_for_shift_write(company_id)
 
         ShiftService._validate_no_duplicate_slots(
             company_id=company_id,

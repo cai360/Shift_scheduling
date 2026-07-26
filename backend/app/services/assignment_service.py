@@ -1,7 +1,7 @@
 from app.extensions import db
 from app.models import ShiftAssignment, Shift, Unavailability
+from app.models.companies_users import CompanyUser
 from app.services.company_service import CompanyService
-from app.services.companyUser_service import CompanyUserService
 from app.services.permission_services import PermissionService
 
 from datetime import datetime
@@ -17,8 +17,17 @@ class AssignmentService:
 
         PermissionService.require_can_manage_company(company_id=company_id, user_id=actor_user_id)
 
-        user = CompanyUserService.get_active_membership(company_id=company_id, user_id=target_user_id)
-        if not user:
+        membership = (
+            CompanyUser.query
+            .filter(
+                CompanyUser.company_id == company_id,
+                CompanyUser.user_id == target_user_id,
+                CompanyUser.deleted_at.is_(None),
+            )
+            .with_for_update()
+            .first()
+        )
+        if not membership:
             raise NotFoundError(message="Company member not found")
         
         if len(shift_ids) != len(set(shift_ids)):

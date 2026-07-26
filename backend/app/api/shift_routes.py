@@ -26,10 +26,10 @@ def create_empty_shifts(company_id):
 @jwt_required
 def get_shifts(company_id):
     """
+    Query params:
     - status: optional[str] = "published"
     - from:   optional[date] inclusive start (YYYY-MM-DD)
     - to:     optional[date] exclusive end (YYYY-MM-DD)
-
     """
     query = ShiftQuerySchema().load(request.args)
 
