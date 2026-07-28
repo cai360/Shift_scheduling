@@ -73,8 +73,8 @@ class ShiftPublishSchema(Schema):
     )
 
 class ShiftUpdateSchema(Schema):
-    start_time = fields.DateTime(required=False)
-    end_time = fields.DateTime(required=False)
+    start_at = fields.DateTime(required=False)
+    end_at = fields.DateTime(required=False)
 
     capacity = fields.Integer(
         required=False,
@@ -83,13 +83,15 @@ class ShiftUpdateSchema(Schema):
 
     @validates_schema
     def validate_time_range(self, data, **kwargs):
-        start = data.get("start_time") #hh:mm
-        end = data.get("end_time")#hh:mm
+        start = data.get("start_at")
+        end = data.get("end_at")
+
+        for field, value in [("start_at", start), ("end_at", end)]:
+            if value is not None and value.tzinfo is not None:
+                raise ValidationError({field: ["Datetime must be naive (no timezone). Provide local time."]})
 
         if start and end and start == end:
-            raise ValidationError(
-                "start_time and end_time cannot be the same."
-            )
+            raise ValidationError("start_at and end_at cannot be the same.")
 
 class ShiftBulkDeleteSchema(Schema):
     shift_ids = fields.List(
@@ -102,6 +104,13 @@ class ShiftQuerySchema(Schema):
     status = fields.Str(required=False)
     from_ = fields.Date(data_key="from", required=False)
     to_ = fields.Date(data_key="to", required=False)
+
+    @validates_schema
+    def validate_date_range(self, data, **kwargs):
+        from_ = data.get("from_")
+        to_ = data.get("to_")
+        if from_ is not None and to_ is not None and from_ >= to_:
+            raise ValidationError({"from": ["'from' must be before 'to'."]})
 
 
 

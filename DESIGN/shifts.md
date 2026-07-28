@@ -17,30 +17,34 @@ The module focuses on shift generation and lifecycle control, not on employee as
 - Shifts belong to exactly one company.
 - Only company managers and owners can create, update, or delete shifts.
 - Employees have read-only access to shifts.
+- Shifts may overlap in time (both draft and published).
+- No two active shifts in the same company may have the exact same `start_at + end_at`.
 - Draft shifts:
   - can be updated
-  - can be hard-deleted
-  - may overlap with other draft shifts
+  - can be hard-deleted (cascades to assignments)
+  - can have employees assigned
 - Published shifts:
   - are immutable
-  - must not overlap with any other published shift in the same company
-  - can only be canceled in future iterations (out of MVP scope)
+  - can have employees assigned
+  - cannot be deleted in MVP (soft delete out of scope)
 ---
 
 ## APIs
-- POST   /companies/{company_id}/shifts/bulk  (manager/owner only)
-- GET    /companies/{company_id}/shifts       (list shifts)
-- PATCH  /shifts/{shift_id}                  (draft only)
-- DELETE /shifts/{shift_id}                  (draft only)
-- POST   /companies/{company_id}/shifts/publish (manager/owner only)
+- POST   /companies/{company_id}/shifts/bulk                  (manager/owner only)
+- GET    /companies/{company_id}/shifts                       (all roles)
+  - Query params: `status` (draft|published, manager/owner only), `from` (YYYY-MM-DD, inclusive), `to` (YYYY-MM-DD, exclusive — see [docs/timezone.md](../docs/timezone.md))
+- PATCH  /companies/{company_id}/shifts/{shift_id}            (draft only, manager/owner only)
+- DELETE /companies/{company_id}/shifts/{shift_id}            (draft only, manager/owner only)
+- POST   /companies/{company_id}/shifts/publish               (manager/owner only)
 
 API Notes
 - Bulk creation is the primary creation method.
-- Individual update / delete operations are restricted to draft shifts only.
+- Individual update is restricted to draft shifts only.
 - Publishing is treated as irreversible in MVP.
 - Bulk publish is **all-or-nothing**:
   - If any shift is invalid, already published, deleted, or not in the company, the request fails.
-- Canceling published shifts is out of MVP scope.
+- Deleting a draft shift is a hard delete (cascades to all assignments including soft-deleted ones); published shifts cannot be deleted in MVP.
+- Employees only see published shifts; managers/owners see all shifts and can filter by status.
 ---
 ## Shift Creation (Bulk)
 Shifts are not created one by one by managers, manager defined a time-range and generation rule, and the system generatres individual shift records accordingly. 
@@ -72,26 +76,21 @@ request payload example
   Defines how many employees can be assigned to each shift.
 
 ### Behavior
-- Draft shifts may overlap.
-- Exact duplicate slots (same start_at, end_at) are rejected 
-- Overlap validation is NOT enforced during creation.
-- Overlap validation is enforced at publish time only.
+- Shifts may overlap in time.
+- Exact duplicate slots (same `start_at + end_at`) within the same company are rejected — applies to both draft and published shifts.
+- When updating a shift, the duplicate check excludes the shift being updated.
 ---
 
 ## Publish Validation Rules
 
-When publishing shifts, the system enforces:
+When publishing shifts, the system validates:
 
-### 1. Candidate vs Candidate
-- No overlap among shifts being published in the same request.
+- Shift exists and belongs to the company
+- Shift is not soft-deleted
+- Shift is not already published
 
-### 2. Candidate vs Existing Published
-- No overlap between candidate shifts and already published shifts.
-
-### Overlap Definition
-```
-A.start_at < B.end_at AND A.end_at > B.start_at
-```
+Overlap is **not** validated at publish time.
+Shift overlap is always allowed — the only restriction is that an employee cannot be assigned to overlapping shifts.
 ---
 
 ## Time Handling Rules

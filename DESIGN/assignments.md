@@ -1,15 +1,16 @@
 # Assignment Module Design (Draft)
 
 ## Purpose
-The Assignment module manages the allocation of employees to published shifts, ensuring that assignments are valid and conflict-free.
+The Assignment module manages the allocation of employees to shifts, ensuring that assignments are valid and conflict-free.
 
 ---
 
 ## Domain
 - A ShiftAssignment represents a relationship between a user and a shift.
-- Assignments can only exist for **published shifts**.
 - Assignments are created and managed by managers (or owners).
 - Assignments do not define shifts; they only attach users to existing shifts.
+- Assignments can be created on both draft and published shifts.
+- Employees can only see assignments on **published shifts**.
 
 ---
 
@@ -28,23 +29,21 @@ The Assignment module manages the allocation of employees to published shifts, e
 
 - Shift must be valid:
   - `shift.deleted_at IS NULL`
-  - `shift.published_at IS NOT NULL`
 
 - No overlap with user unavailability:
   - `unavailability.start_at < shift.end_at`
   - `unavailability.end_at > shift.start_at`
 
-- Assignment overlap handling:
-  - Not explicitly validated
-  - Implicitly prevented by shift-level invariant:
-    published shifts within a company must not overlap
+- No employee shift overlap:
+  - A user cannot be assigned to a shift that overlaps in time with another shift they are already assigned to
+  - Applies regardless of whether shifts are draft or published
 
 ---
 
 ## APIs
 
-- POST   /companies/{company_id}/assignments   (manager/owner only)
-- POST /companies/{company_id}/assignments   (manager/owner only)
+- POST   /companies/{company_id}/assignments           (manager/owner only)
+- POST   /companies/{company_id}/assignments/unassign  (manager/owner only)
 
 ---
 
@@ -62,8 +61,8 @@ The Assignment module manages the allocation of employees to published shifts, e
 - Input `shift_ids` must be unique.
 - All shifts must:
   - belong to the company
-  - be published
   - not be deleted
+  - (draft or published both accepted)
 - Operation is **all-or-nothing**:
   - if any shift fails validation → entire request fails
 - Assignments are created in batch.
@@ -72,10 +71,17 @@ The Assignment module manages the allocation of employees to published shifts, e
 
 ## Assignment Deletion (Unassign)
 
+### Request Example
+```
+{
+  "assignment_ids": ["uuid1", "uuid2"]
+}
+```
+
 - Uses soft delete (`deleted_at`)
 - Only allowed if:
   - assignment belongs to the company
-  - assignment is active
+  - assignment is active (`deleted_at IS NULL`)
 
 ### Behavior
 - Partial success is not allowed:
@@ -107,5 +113,5 @@ The Assignment module manages the allocation of employees to published shifts, e
 4. Schedule Period (Roster)
    - Group assignments into fixed planning windows
 
-5. Assignment Conflict Expansion
-   - Prevent overlap across assigned shifts
+5. Assignment Locking by Payroll Period
+   - Prevent modification after payroll period is frozen

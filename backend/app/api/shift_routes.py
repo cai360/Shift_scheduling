@@ -1,7 +1,6 @@
 from flask import Blueprint, request, g
 from app.schemas.shift_schema import *
 from app.utils.auth_decorators import jwt_required
-from app.utils.datetime_utils import parse_datetime
 from app.services.shift_service import ShiftService
 from app.utils.response import ok
 
