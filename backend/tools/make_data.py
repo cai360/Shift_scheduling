@@ -295,7 +295,7 @@ def create_takeovers(assignments: list[ShiftAssignment]) -> list[int]:
     new_takeovers = []
 
     for i, assignment in enumerate(samples):
-        shift = Shift.query.get(assignment.shift_id)
+        shift = db.session.get(Shift, assignment.shift_id)
         company_id = shift.company_id
 
         approver_cu = CompanyUser.query.filter(
@@ -415,7 +415,12 @@ def create_leaves(
         manager_cu = CompanyUser.query.filter_by(
             company_id=company.id, role="manager"
         ).filter(CompanyUser.deleted_at.is_(None)).first()
-        reviewer = User.query.get(manager_cu.user_id) if manager_cu else owner
+        reviewer = (
+            User.query.filter_by(id=manager_cu.user_id)
+            .filter(User.deleted_at.is_(None))
+            .first()
+            if manager_cu else None
+        ) or owner
 
         start = _dt(s_off, 9)
         end   = _dt(e_off, 18)
