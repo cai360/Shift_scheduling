@@ -479,50 +479,57 @@ def undo_seed():
     company_ids        = manifest.get("company_ids", [])
     user_ids           = manifest.get("user_ids", [])
 
-    deleted = ShiftTakeover.query.filter(
-        ShiftTakeover.id.in_(takeover_ids)
-    ).delete(synchronize_session=False)
-    logger.info("Deleted ShiftTakeovers  : %d", deleted)
+    try:
+        deleted = ShiftTakeover.query.filter(
+            ShiftTakeover.id.in_(takeover_ids)
+        ).delete(synchronize_session=False)
+        logger.info("Deleted ShiftTakeovers  : %d", deleted)
 
-    deleted = Leave.query.filter(
-        Leave.id.in_(leave_ids)
-    ).delete(synchronize_session=False)
-    logger.info("Deleted Leaves          : %d", deleted)
+        deleted = Leave.query.filter(
+            Leave.id.in_(leave_ids)
+        ).delete(synchronize_session=False)
+        logger.info("Deleted Leaves          : %d", deleted)
 
-    deleted = Unavailability.query.filter(
-        Unavailability.id.in_(unavailability_ids)
-    ).delete(synchronize_session=False)
-    logger.info("Deleted Unavailabilities: %d", deleted)
+        deleted = Unavailability.query.filter(
+            Unavailability.id.in_(unavailability_ids)
+        ).delete(synchronize_session=False)
+        logger.info("Deleted Unavailabilities: %d", deleted)
 
-    deleted = ShiftAssignment.query.filter(
-        ShiftAssignment.id.in_(assignment_ids)
-    ).delete(synchronize_session=False)
-    logger.info("Deleted ShiftAssignments: %d", deleted)
+        deleted = ShiftAssignment.query.filter(
+            ShiftAssignment.id.in_(assignment_ids)
+        ).delete(synchronize_session=False)
+        logger.info("Deleted ShiftAssignments: %d", deleted)
 
-    deleted = Shift.query.filter(
-        Shift.id.in_(shift_ids)
-    ).delete(synchronize_session=False)
-    logger.info("Deleted Shifts          : %d", deleted)
+        deleted = Shift.query.filter(
+            Shift.id.in_(shift_ids)
+        ).delete(synchronize_session=False)
+        logger.info("Deleted Shifts          : %d", deleted)
 
-    deleted = CompanyUser.query.filter(
-        CompanyUser.id.in_(cu_ids)
-    ).delete(synchronize_session=False)
-    logger.info("Deleted CompanyUsers    : %d", deleted)
+        deleted = CompanyUser.query.filter(
+            CompanyUser.id.in_(cu_ids)
+        ).delete(synchronize_session=False)
+        logger.info("Deleted CompanyUsers    : %d", deleted)
 
-    deleted = Company.query.filter(
-        Company.id.in_(company_ids)
-    ).delete(synchronize_session=False)
-    logger.info("Deleted Companies       : %d", deleted)
+        deleted = Company.query.filter(
+            Company.id.in_(company_ids)
+        ).delete(synchronize_session=False)
+        logger.info("Deleted Companies       : %d", deleted)
 
-    deleted = User.query.filter(
-        User.id.in_(user_ids)
-    ).delete(synchronize_session=False)
-    logger.info("Deleted Users           : %d", deleted)
+        deleted = User.query.filter(
+            User.id.in_(user_ids)
+        ).delete(synchronize_session=False)
+        logger.info("Deleted Users           : %d", deleted)
 
-    db.session.commit()
-    os.remove(MANIFEST_PATH)
-    logger.info("Manifest deleted")
-    logger.info("undo_seed done")
+        db.session.commit()
+        os.remove(MANIFEST_PATH)
+        logger.info("Manifest deleted")
+        logger.info("undo_seed done")
+    except Exception as e:
+        db.session.rollback()
+        logger.error(
+            "undo_seed failed (%s). Use --force-undo to clean up.", e
+        )
+        raise
 
 
 def force_undo():
@@ -620,6 +627,16 @@ def run_seed():
             if confirm in ["y", "Y"]:
                 reset_db()
             return
+
+        if os.path.exists(MANIFEST_PATH):
+            logger.info("Existing manifest found, running undo first...")
+            try:
+                undo_seed()
+            except Exception as e:
+                logger.error(
+                    "Auto-undo failed (%s). Please run --force-undo first.", e
+                )
+                sys.exit(1)
 
         logger.info("=== [1/7] Creating Users ===")
         users, new_user_ids = create_users()
