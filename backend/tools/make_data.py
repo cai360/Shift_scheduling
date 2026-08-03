@@ -110,7 +110,16 @@ def create_companies(users: list[User]) -> tuple[list[tuple[Company, User]], lis
                     c["name"],
                 )
                 sys.exit(1)
-            owner = User.query.get(owner_cu.user_id)
+            owner = User.query.filter_by(id=owner_cu.user_id).filter(
+                User.deleted_at.is_(None)
+            ).first()
+            if not owner:
+                logger.error(
+                    "Company '%s' owner (user_id=%s) is missing or inactive; "
+                    "cannot proceed with seed. Please assign an active owner manually.",
+                    c["name"], owner_cu.user_id,
+                )
+                sys.exit(1)
             result.append((existing, owner))
             continue
 
@@ -441,6 +450,23 @@ def create_leaves(
 
 # ── 清空資料庫 ────────────────────────────────────────────────
 
+_MANIFEST_REQUIRED_KEYS = [
+    "user_ids", "company_ids", "company_user_ids",
+    "shift_ids", "assignment_ids", "takeover_ids",
+    "unavailability_ids", "leave_ids",
+]
+
+
+def _validate_manifest(manifest: object) -> None:
+    if not isinstance(manifest, dict):
+        raise ValueError(f"expected a JSON object, got {type(manifest).__name__}")
+    for key in _MANIFEST_REQUIRED_KEYS:
+        if key not in manifest:
+            raise ValueError(f"missing required key: '{key}'")
+        if not isinstance(manifest[key], list):
+            raise ValueError(f"'{key}' must be a list, got {type(manifest[key]).__name__}")
+
+
 def reset_db():
     logger.warning("Clearing all tables...")
     for table in reversed(db.metadata.sorted_tables):
@@ -464,9 +490,17 @@ def undo_seed():
     try:
         with open(MANIFEST_PATH) as f:
             manifest = json.load(f)
-    except (json.JSONDecodeError, KeyError) as e:
+    except json.JSONDecodeError as e:
         logger.error(
-            "Manifest file is invalid (%s). Use --force-undo for a broad cleanup.", e
+            "Manifest file is invalid JSON (%s). Use --force-undo for a broad cleanup.", e
+        )
+        sys.exit(1)
+
+    try:
+        _validate_manifest(manifest)
+    except ValueError as e:
+        logger.error(
+            "Manifest validation failed (%s). Use --force-undo for a broad cleanup.", e
         )
         sys.exit(1)
 
