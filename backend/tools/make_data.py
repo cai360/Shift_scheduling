@@ -477,6 +477,7 @@ def reset_db():
     for table in reversed(db.metadata.sorted_tables):
         db.session.execute(table.delete())
     db.session.commit()
+    os.remove(MANIFEST_PATH)
     logger.info("reset_db done")
 
 
@@ -645,6 +646,7 @@ def force_undo():
     logger.info("Deleted Users           : %d", deleted)
 
     db.session.commit()
+    os.remove(MANIFEST_PATH)
     logger.info("force_undo done")
 
 
