@@ -64,3 +64,5 @@ Thumbs.db
 
 shift_schedualing/
 
+# make_data manifest
+.make_data_manifest.json
