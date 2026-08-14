@@ -26,7 +26,7 @@ header {
   .right {
     display: flex;
     align-items: center;
-    gap: 12px; 
+    gap: 12px;
 
     .profile {
       display: block;
@@ -44,4 +44,3 @@ header {
     }
   }
 }
-

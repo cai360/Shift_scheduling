@@ -65,6 +65,7 @@ const LoginPage = () => {
             placeholder="密碼"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
           />
           <AppButton loading={loading} onClick={handleLogin}>
             登入

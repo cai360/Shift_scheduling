@@ -1,4 +1,5 @@
 import CompanySwitcher from './CompanySwitcher';
+import UserMenu from './UserMenu';
 import styles from './Header.module.css';
 import { useNavigate } from 'react-router-dom';
 
@@ -13,9 +14,7 @@ const Header = () => {
 
         <div className={styles.right}>
           <CompanySwitcher />
-          <div className={styles.profile}>
-            <img src="https://picsum.photos/300/200/?random=10" />
-          </div>
+          <UserMenu />
         </div>
       </div>
     </header>
