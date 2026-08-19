@@ -1,7 +1,14 @@
 import ShiftCalendarView from '../components/shifts/ShiftCalendarView';
 import { useCompanyContext } from '../contexts/useCompanyContext';
 import { useEffect, useState } from 'react';
-import { getShifts, type Shift } from '../services/shift.api';
+import ShiftDetailModal from '../components/shifts/ShiftDetailModal';
+import { CompanyRoles } from '../types/company';
+import {
+  getShifts,
+  getShiftDetail,
+  type Shift,
+  type ShiftDetail,
+} from '../services/shift.api';
 
 type DateRange = {
   from: string;
@@ -21,9 +28,17 @@ type DateRange = {
 // };
 
 const ShiftManagementPage = () => {
-  const { currentCompanyId } = useCompanyContext();
+  const { companies, currentCompanyId } = useCompanyContext();
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [range, setRange] = useState<DateRange | null>(null);
+  const [selectedShift, setSelectedShift] = useState<ShiftDetail | null>(null);
+
+  const currentCompany = companies.find(
+    (company) => company.company_id === currentCompanyId,
+  );
+  const canManageShifts =
+    currentCompany?.role === CompanyRoles.OWNER ||
+    currentCompany?.role === CompanyRoles.MANAGER;
 
   useEffect(() => {
     if (!currentCompanyId || !range) return;
@@ -37,13 +52,36 @@ const ShiftManagementPage = () => {
     });
   }, [currentCompanyId, range]);
 
+  const handleShiftClick = async (shiftId: string) => {
+    if (!currentCompanyId) return;
+
+    try {
+      const detail = await getShiftDetail(currentCompanyId, shiftId);
+      setSelectedShift(detail);
+      console.log('shift detail: ', detail);
+    } catch (error) {
+      console.error('Failed to get shift detail:', error);
+    }
+  };
+
   return (
-    <ShiftCalendarView
-      shifts={shifts}
-      onRangeChange={(from, to) => {
-        setRange({ from, to });
-      }}
-    />
+    <>
+      <ShiftCalendarView
+        shifts={shifts}
+        onRangeChange={(from, to) => {
+          setRange({ from, to });
+        }}
+        onShiftClick={handleShiftClick}
+      />
+
+      <ShiftDetailModal
+        shift={selectedShift}
+        showStatus={canManageShifts}
+        onClose={() => {
+          setSelectedShift(null);
+        }}
+      />
+    </>
   );
 };
 
