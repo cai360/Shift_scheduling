@@ -64,6 +64,21 @@ class ShiftOutSchema(Schema):
     def get_remaining_capacity(self, obj):
         return obj.capacity - len(obj.assignments or [])
 
+class ShiftDetailAssignmentSchema(Schema):
+    id = fields.UUID(dump_only=True)
+    user_id = fields.UUID(dump_only=True)
+    name = fields.String(
+        attribute="user.username",
+        dump_only=True,
+    )
+
+class ShiftDetailOutSchema(ShiftOutSchema):
+    assignments = fields.Nested(
+        ShiftDetailAssignmentSchema,
+        many=True,
+        dump_only=True,
+    )
+
 
 class ShiftPublishSchema(Schema):
     shift_ids = fields.List(
@@ -111,6 +126,7 @@ class ShiftQuerySchema(Schema):
         to_ = data.get("to_")
         if from_ is not None and to_ is not None and from_ >= to_:
             raise ValidationError({"from": ["'from' must be before 'to'."]})
+
 
 
 

@@ -13,6 +13,30 @@ from app.errors.error_base import *
 class ShiftService:
 
     @staticmethod
+    def get_shift_detail(*, user_id, shift_id, company_id):
+        membership = PermissionService.require_active_member(company_id=company_id, user_id=user_id)
+        shift = (Shift.query.options(
+                selectinload(Shift.assignments)
+                .selectinload(ShiftAssignment.user)
+            ).filter(
+                Shift.id == shift_id,
+                Shift.company_id == company_id,
+                Shift.deleted_at.is_(None),
+            ).first()
+        )
+
+        if not shift:
+            raise NotFoundError(message="Shift not found.")
+
+        is_manager = membership.role in ("manager", "owner")
+
+        if not is_manager and shift.published_at is None:
+            raise NotFoundError(message="Shift not found.")
+
+        return shift
+
+
+    @staticmethod
     def create_shifts_bulk(*, data, user_id, company_id):
         """
         MVP behavior:
