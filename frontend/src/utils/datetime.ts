@@ -29,43 +29,27 @@ const getCachedFormatter = (
 
 export const formatBusinessDate = (
   value: string | Date,
-  {
-    locale = 'zh-TW',
-    timeZone = BUSINESS_TZ,
-  }: BusinessDateFormatOptions = {},
+  { locale = 'zh-TW', timeZone = BUSINESS_TZ }: BusinessDateFormatOptions = {},
 ) => {
-  const formatter = getCachedFormatter(
-    dateFormatterCache,
-    locale,
-    timeZone,
-    {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      weekday: 'short',
-    },
-  );
+  const formatter = getCachedFormatter(dateFormatterCache, locale, timeZone, {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    weekday: 'short',
+  });
 
   return formatter.format(new Date(value));
 };
 
 export const formatBusinessTime = (
   value: string | Date,
-  {
-    locale = 'zh-TW',
-    timeZone = BUSINESS_TZ,
-  }: BusinessDateFormatOptions = {},
+  { locale = 'zh-TW', timeZone = BUSINESS_TZ }: BusinessDateFormatOptions = {},
 ) => {
-  const formatter = getCachedFormatter(
-    timeFormatterCache,
-    locale,
-    timeZone,
-    {
-      hour: '2-digit',
-      minute: '2-digit',
-      hourCycle: 'h23',
-    },
-  );
+  const formatter = getCachedFormatter(timeFormatterCache, locale, timeZone, {
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  });
 
   return formatter.format(new Date(value));
 };

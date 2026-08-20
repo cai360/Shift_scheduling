@@ -65,6 +65,7 @@ const ShiftCalendarView = ({ shifts, onRangeChange, onShiftClick }: Props) => {
     <FullCalendar
       plugins={[timeGridPlugin]}
       initialView="timeGridWeek"
+      height="auto"
       weekends={true}
       events={events}
       slotLabelFormat={{
