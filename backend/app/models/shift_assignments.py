@@ -25,6 +25,11 @@ class ShiftAssignment(BaseModel):
         back_populates="assignments"
     )
 
+    user = db.relationship(
+        "User",
+        foreign_keys=[user_id],
+    )
+
     __table_args__ = (
     db.Index(
         "uq_shift_assignment_active",
