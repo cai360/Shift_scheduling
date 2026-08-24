@@ -5,11 +5,13 @@ import styles from './UserMenu.module.css';
 
 const UserMenu = () => {
   const [open, setOpen] = useState(false);
-  const { user, setUser } = useAuthContext();
+  const { user, logout } = useAuthContext();
   const navigate = useNavigate();
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (!open) return;
+
     const handleClickOutside = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setOpen(false);
@@ -17,12 +19,10 @@ const UserMenu = () => {
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [open]);
 
   const handleLogout = () => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    setUser(null);
+    logout();
     navigate('/login');
   };
 
@@ -35,11 +35,17 @@ const UserMenu = () => {
 
   return (
     <div className={styles.wrapper} ref={menuRef}>
-      <div className={styles.avatar} onClick={() => setOpen((v) => !v)}>
+      <button
+        type="button"
+        className={styles.avatar}
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-controls="user-menu"
+      >
         {initial}
-      </div>
+      </button>
       {open && (
-        <div className={styles.menu}>
+        <div id="user-menu" className={styles.menu}>
           <div className={styles.menuHeader}>
             <div className={styles.menuName}>{user?.username}</div>
             <div className={styles.menuEmail}>{user?.email}</div>

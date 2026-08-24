@@ -8,7 +8,7 @@ import AppButton from '../components/ui/AppButton';
 import styles from './AccountSettingsPage.module.css';
 
 const AccountSettingsPage = () => {
-  const { setUser } = useAuthContext();
+  const { logout } = useAuthContext();
   const navigate = useNavigate();
 
   const [oldPassword, setOldPassword] = useState('');
@@ -17,6 +17,10 @@ const AccountSettingsPage = () => {
   const [passwordLoading, setPasswordLoading] = useState(false);
 
   const handleChangePassword = async () => {
+    if (oldPassword === '') {
+      message.error('請輸入目前密碼');
+      return;
+    }
     if (newPassword.length < 8) {
       message.error('新密碼至少需要 8 個字元');
       return;
@@ -50,12 +54,14 @@ const AccountSettingsPage = () => {
       okButtonProps: { danger: true },
       cancelText: '取消',
       onOk: async () => {
-        await deleteMe();
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        setUser(null);
-        message.success('帳號已刪除');
-        navigate('/login');
+        try {
+          await deleteMe();
+          logout();
+          message.success('帳號已刪除');
+          navigate('/login');
+        } catch {
+          message.error('帳號刪除失敗，請稍後再試');
+        }
       },
     });
   };

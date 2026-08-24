@@ -11,6 +11,7 @@ export type AuthContextType = {
   setUser: (user: User | null) => void;
   isAuthInitializing: boolean;
   restoreUser: () => Promise<void>;
+  logout: () => void;
 };
 
 export const AuthContext = createContext<AuthContextType | undefined>(

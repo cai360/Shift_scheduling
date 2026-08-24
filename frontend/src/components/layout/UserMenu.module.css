@@ -16,6 +16,13 @@
   cursor: pointer;
   user-select: none;
   flex-shrink: 0;
+  border: none;
+  outline: none;
+}
+
+.avatar:focus-visible {
+  outline: 2px solid #4f46e5;
+  outline-offset: 3px;
 }
 
 .menu {
