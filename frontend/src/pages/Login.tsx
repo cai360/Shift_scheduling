@@ -43,7 +43,6 @@ const LoginPage = () => {
 
       navigate('/home');
       message.success(`登入成功`);
-      console.log('Login Success', res);
     } catch (err) {
       message.error(`登入失敗 ${err}`);
     } finally {
@@ -55,7 +54,13 @@ const LoginPage = () => {
       <div className={styles.layout}>
         <h1 className={styles.logo}>LOGO</h1>
         <h3 className={styles.title}>Shift Scheduling System</h3>
-        <div className={styles.loginBlock}>
+        <form
+          className={styles.loginBlock}
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleLogin();
+          }}
+        >
           <AppInput
             placeholder="帳號"
             value={email}
@@ -65,9 +70,8 @@ const LoginPage = () => {
             placeholder="密碼"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
           />
-          <AppButton loading={loading} onClick={handleLogin}>
+          <AppButton loading={loading} htmlType="submit">
             登入
           </AppButton>
           <div className={styles.loginFooter}>
@@ -79,7 +83,7 @@ const LoginPage = () => {
             </AppButton>
           </div>
           {error && <p className={styles.error}>{error}</p>}
-        </div>
+        </form>
       </div>
     </>
   );
