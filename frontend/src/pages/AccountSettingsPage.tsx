@@ -70,36 +70,51 @@ const AccountSettingsPage = () => {
     <div className={styles.layout}>
       <h2>帳號設定</h2>
 
-      <section className={styles.section}>
+      <form
+        className={styles.section}
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleChangePassword();
+        }}
+      >
         <h3 className={styles.sectionTitle}>修改密碼</h3>
         <div className={styles.field}>
-          <label className={styles.label}>目前密碼</label>
+          <label htmlFor="old-password" className={styles.label}>
+            目前密碼
+          </label>
           <AppPasswordInput
+            id="old-password"
             value={oldPassword}
             onChange={(e) => setOldPassword(e.target.value)}
             placeholder="輸入目前密碼"
           />
         </div>
         <div className={styles.field}>
-          <label className={styles.label}>新密碼</label>
+          <label htmlFor="new-password" className={styles.label}>
+            新密碼
+          </label>
           <AppPasswordInput
+            id="new-password"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
             placeholder="至少 8 個字元"
           />
         </div>
         <div className={styles.field}>
-          <label className={styles.label}>確認新密碼</label>
+          <label htmlFor="confirm-password" className={styles.label}>
+            確認新密碼
+          </label>
           <AppPasswordInput
+            id="confirm-password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             placeholder="再次輸入新密碼"
           />
         </div>
-        <AppButton loading={passwordLoading} onClick={handleChangePassword}>
+        <AppButton loading={passwordLoading} htmlType="submit">
           更新密碼
         </AppButton>
-      </section>
+      </form>
 
       <div className={styles.divider} />
 
