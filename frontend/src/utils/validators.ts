@@ -1,6 +1,5 @@
-export const isValidEmail = (email: string): boolean => {
-  return /\S+@\S+\.\S+/.test(email);
-};
+export const isValidEmail = (email: string): string | null =>
+  /\S+@\S+\.\S+/.test(email) ? null : 'Email 格式錯誤';
 
 export const isPasswordMatch = (
   password: string,
@@ -16,13 +15,11 @@ export const validateLogin = ({
   email: string;
   password: string;
 }): string | null => {
-  if (!isValidEmail(email)) {
-    return 'Email 格式錯誤';
-  }
+  const emailError = isValidEmail(email);
+  if (emailError) return emailError;
 
-  if (!password) {
-    return '請輸入密碼';
-  }
+  if (!password) return '請輸入密碼';
+
   return null;
 };
 
@@ -35,13 +32,10 @@ export const validateRegister = ({
   password: string;
   confirmPassword: string;
 }): string | null => {
-  if (!isValidEmail(email)) {
-    return 'Email 格式錯誤';
-  }
+  const emailError = isValidEmail(email);
+  if (emailError) return emailError;
 
-  if (!isPasswordMatch(password, confirmPassword)) {
-    return '兩次密碼不一致';
-  }
+  if (!isPasswordMatch(password, confirmPassword)) return '兩次密碼不一致';
 
   return null;
 };
