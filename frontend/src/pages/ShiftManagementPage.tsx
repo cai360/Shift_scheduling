@@ -58,7 +58,6 @@ const ShiftManagementPage = () => {
     try {
       const detail = await getShiftDetail(currentCompanyId, shiftId);
       setSelectedShift(detail);
-      console.log('shift detail: ', detail);
     } catch (error) {
       console.error('Failed to get shift detail:', error);
     }
