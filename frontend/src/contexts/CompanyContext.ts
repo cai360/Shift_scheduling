@@ -13,6 +13,7 @@ export type CompanyContextType = {
   currentCompanyId: string | null;
   setCurrentCompanyId: (companyId: string | null) => void;
   switchCompany: (companyId: string) => void;
+  refreshCompanies: () => Promise<void>;
   isCompanyInitializing: boolean;
 };
 

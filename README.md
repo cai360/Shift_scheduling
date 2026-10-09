@@ -24,3 +24,7 @@ localhost:5432
 ## Stop
 
 docker compose down
+
+
+## db
+docker compose exec db psql -U user_name -d db_name

@@ -12,9 +12,10 @@ import {
 type Props = {
   shifts: Shift[];
   onRangeChange: (from: string, to: string) => void;
+  onShiftClick: (shiftId: string) => void;
 };
 
-const ShiftCalendarView = ({ shifts, onRangeChange }: Props) => {
+const ShiftCalendarView = ({ shifts, onRangeChange, onShiftClick }: Props) => {
   const events: EventInput[] = useMemo(() => {
     return shifts.map((shift) => ({
       id: shift.id,
@@ -64,8 +65,19 @@ const ShiftCalendarView = ({ shifts, onRangeChange }: Props) => {
     <FullCalendar
       plugins={[timeGridPlugin]}
       initialView="timeGridWeek"
+      height="auto"
       weekends={true}
       events={events}
+      slotLabelFormat={{
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      }}
+      eventTimeFormat={{
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      }}
       slotMinTime={calendarRange.slotMinTime}
       slotMaxTime={calendarRange.slotMaxTime}
       datesSet={(arg) => {
@@ -73,6 +85,9 @@ const ShiftCalendarView = ({ shifts, onRangeChange }: Props) => {
           toBusinessDateOnly(arg.start),
           toBusinessDateOnly(arg.end),
         );
+      }}
+      eventClick={(info) => {
+        onShiftClick(info.event.id);
       }}
     />
   );

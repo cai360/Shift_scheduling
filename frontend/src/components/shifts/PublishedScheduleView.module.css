@@ -1,0 +1,11 @@
+.scheduleSection {
+  width: 100%;
+  max-width: 1440px;
+  padding: 24px;
+}
+
+@media (max-width: 768px) {
+  .scheduleSection {
+    padding: 16px;
+  }
+}

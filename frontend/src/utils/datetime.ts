@@ -1,5 +1,59 @@
 export const BUSINESS_TZ = 'Asia/Taipei';
 
+type BusinessDateFormatOptions = {
+  locale?: string;
+  timeZone?: string;
+};
+
+const dateFormatterCache = new Map<string, Intl.DateTimeFormat>();
+const timeFormatterCache = new Map<string, Intl.DateTimeFormat>();
+
+const getCachedFormatter = (
+  cache: Map<string, Intl.DateTimeFormat>,
+  locale: string,
+  timeZone: string,
+  options: Intl.DateTimeFormatOptions,
+) => {
+  const cacheKey = `${locale}:${timeZone}`;
+  const cachedFormatter = cache.get(cacheKey);
+
+  if (cachedFormatter) return cachedFormatter;
+
+  const formatter = new Intl.DateTimeFormat(locale, {
+    ...options,
+    timeZone,
+  });
+  cache.set(cacheKey, formatter);
+  return formatter;
+};
+
+export const formatBusinessDate = (
+  value: string | Date,
+  { locale = 'zh-TW', timeZone = BUSINESS_TZ }: BusinessDateFormatOptions = {},
+) => {
+  const formatter = getCachedFormatter(dateFormatterCache, locale, timeZone, {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    weekday: 'short',
+  });
+
+  return formatter.format(new Date(value));
+};
+
+export const formatBusinessTime = (
+  value: string | Date,
+  { locale = 'zh-TW', timeZone = BUSINESS_TZ }: BusinessDateFormatOptions = {},
+) => {
+  const formatter = getCachedFormatter(timeFormatterCache, locale, timeZone, {
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  });
+
+  return formatter.format(new Date(value));
+};
+
 const businessPartsFormatter = new Intl.DateTimeFormat('en-CA', {
   timeZone: BUSINESS_TZ,
   year: 'numeric',

@@ -43,6 +43,16 @@ def get_shifts(company_id):
     
     return ok(ShiftOutSchema(many=True).dump(shifts))
 
+@bp.get("/<uuid:shift_id>")
+@jwt_required
+def get_shift_detail(company_id, shift_id):
+    shift = ShiftService.get_shift_detail(
+        company_id=company_id,
+        shift_id=shift_id,
+        user_id=g.user_id,
+    )
+
+    return ok(ShiftDetailOutSchema().dump(shift))
 
 @bp.post("/publish")
 @jwt_required

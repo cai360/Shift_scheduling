@@ -20,6 +20,16 @@ export interface Shift {
   remaining_capacity: number;
 }
 
+export interface ShiftDetailAssignment {
+  id: string;
+  user_id: string;
+  name: string;
+}
+
+export interface ShiftDetail extends Shift {
+  assignments: ShiftDetailAssignment[];
+}
+
 export interface ShiftQueryParams {
   status?: ShiftStatus;
   from?: string;
@@ -36,5 +46,16 @@ export const getShifts = async (
     `/companies/${companyId}/shifts`,
     { params },
   );
+  return response.data.data;
+};
+
+export const getShiftDetail = async (
+  companyId: string,
+  shiftId: string,
+): Promise<ShiftDetail> => {
+  const response = await http.get<ApiResponse<ShiftDetail>>(
+    `/companies/${companyId}/shifts/${shiftId}`,
+  );
+
   return response.data.data;
 };

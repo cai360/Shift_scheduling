@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   CompanyContext,
   CompanyContextType,
@@ -30,53 +30,48 @@ export const CompanyProvider = ({
     localStorage.setItem(COMPANY_STORAGE_KEY, companyId);
   };
 
-  useEffect(() => {
-    if (isAuthInitializing) return;
+  const refreshCompanies = useCallback(async () => {
     setIsCompanyInitializing(true);
 
-    const restoreCompanies = async () => {
-      if (!user) {
-        setCompanies([]);
-        setCurrentCompanyId(null);
-        setIsCompanyInitializing(false);
-        localStorage.removeItem(COMPANY_STORAGE_KEY);
-        return;
-      }
+    if (!user) {
+      setCompanies([]);
+      setCurrentCompanyId(null);
+      setIsCompanyInitializing(false);
+      localStorage.removeItem(COMPANY_STORAGE_KEY);
+      return;
+    }
 
-      try {
-        const companyList = await getMyCompanies();
-        const nextCompanies = companyList;
+    try {
+      const nextCompanies = await getMyCompanies();
+      setCompanies(nextCompanies);
 
-        setCompanies(nextCompanies);
+      const savedCompanyId = localStorage.getItem(COMPANY_STORAGE_KEY);
+      const matchedCompany = nextCompanies.find(
+        (company: MyCompany) => company.company_id === savedCompanyId,
+      );
 
-        const savedCompanyId = localStorage.getItem(COMPANY_STORAGE_KEY);
-
-        const matchedCompany = nextCompanies.find(
-          (company: MyCompany) => company.company_id === savedCompanyId,
-        );
-
-        if (matchedCompany) {
-          setCurrentCompanyId(matchedCompany.company_id);
-        } else if (nextCompanies.length > 0) {
-          setCurrentCompanyId(nextCompanies[0].company_id);
-          localStorage.setItem(
-            COMPANY_STORAGE_KEY,
-            nextCompanies[0].company_id,
-          );
-        } else {
-          setCurrentCompanyId(null);
-          localStorage.removeItem(COMPANY_STORAGE_KEY);
-        }
-      } catch {
-        setCompanies([]);
+      if (matchedCompany) {
+        setCurrentCompanyId(matchedCompany.company_id);
+      } else if (nextCompanies.length > 0) {
+        setCurrentCompanyId(nextCompanies[0].company_id);
+        localStorage.setItem(COMPANY_STORAGE_KEY, nextCompanies[0].company_id);
+      } else {
         setCurrentCompanyId(null);
         localStorage.removeItem(COMPANY_STORAGE_KEY);
-      } finally {
-        setIsCompanyInitializing(false);
       }
-    };
-    restoreCompanies();
-  }, [user, isAuthInitializing]);
+    } catch {
+      setCompanies([]);
+      setCurrentCompanyId(null);
+      localStorage.removeItem(COMPANY_STORAGE_KEY);
+    } finally {
+      setIsCompanyInitializing(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (isAuthInitializing) return;
+    void refreshCompanies();
+  }, [isAuthInitializing, refreshCompanies]);
 
   const value: CompanyContextType = {
     companies,
@@ -84,6 +79,7 @@ export const CompanyProvider = ({
     setCompanies,
     setCurrentCompanyId,
     switchCompany,
+    refreshCompanies,
     isCompanyInitializing,
   };
 

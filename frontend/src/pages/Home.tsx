@@ -1,37 +1,40 @@
-import { message } from 'antd';
-import AppButton from '../components/ui/AppButton';
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Spin } from 'antd';
+import CompanyOnboardingView from '../components/company/CompanyOnboardingView';
+import PublishedScheduleView from '../components/shifts/PublishedScheduleView';
+import { useCompanyContext } from '../contexts/useCompanyContext';
+import { CompanyRoles } from '../types/company';
 
 const HomePage = () => {
-  const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
+  const { companies, currentCompanyId, isCompanyInitializing } =
+    useCompanyContext();
 
-  const handleLogout = () => {
-    try {
-      setLoading(true);
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-      navigate('/login');
-      message.success(`登出成功`);
-    } catch (err) {
-      message.error(`登出失敗`);
-      console.error('Logout Failed', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const currentCompany = companies.find(
+    (company) => company.company_id === currentCompanyId,
+  );
+  const canManageShifts =
+    currentCompany?.role === CompanyRoles.OWNER ||
+    currentCompany?.role === CompanyRoles.MANAGER;
+
+  if (isCompanyInitializing) {
+    return (
+      <div>
+        <Spin size="large" />
+      </div>
+    );
+  }
+
+  if (companies.length === 0) {
+    return <CompanyOnboardingView />;
+  }
+
+  if (!currentCompanyId) return null;
 
   return (
-    <div>
-      <h1>Home Page</h1>
-      <AppButton loading={loading} onClick={() => navigate('/new-company')}>
-        新公司
-      </AppButton>
-      <AppButton loading={loading} onClick={handleLogout}>
-        登出
-      </AppButton>
-    </div>
+    <PublishedScheduleView
+      key={currentCompanyId}
+      companyId={currentCompanyId}
+      showStatus={canManageShifts}
+    />
   );
 };
 
